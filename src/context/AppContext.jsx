@@ -201,9 +201,11 @@ export function AppProvider({ children }) {
   // Communities & Channels
   // ─────────────────────────────────────────────────────────────────────
   const loadCommunities = async () => {
+    if (!session) return;
     const { data, error } = await supabase
       .from('communities')
-      .select('*, channels(*)')
+      .select('*, channels(*), community_members!inner(user_id)')
+      .eq('community_members.user_id', session.user.id)
       .order('created_at', { ascending: true });
 
     if (!error && data) {
@@ -215,6 +217,103 @@ export function AppProvider({ children }) {
         }
       }
     }
+  };
+
+  const createCommunity = async (commData) => {
+    if (!session) return null;
+    const { name, icon, category, is_private, passcode, roomCode } = commData;
+
+    // 1. Create Community
+    const { data: newComm, error: commError } = await supabase
+      .from('communities')
+      .insert({
+        name,
+        description: `${category} Community`,
+        icon,
+        is_private,
+        passcode,
+        room_code: roomCode,
+        created_by: session.user.id
+      })
+      .select()
+      .single();
+
+    if (commError || !newComm) {
+      console.error('Error creating community:', commError);
+      return null;
+    }
+
+    // 2. Create Default Channels
+    const defaultChannels = [
+      { community_id: newComm.id, name: 'general', description: 'General channel', type: 'text', created_by: session.user.id },
+      { community_id: newComm.id, name: 'notes-sharing', description: 'Share resources here', type: 'text', created_by: session.user.id }
+    ];
+    await supabase.from('channels').insert(defaultChannels);
+
+    // 3. Add to community_members
+    await supabase.from('community_members').insert({
+      community_id: newComm.id,
+      user_id: session.user.id
+    });
+
+    await loadCommunities();
+    setActiveCommunityId(newComm.id);
+    return newComm;
+  };
+
+  const createChannel = async (communityId, name, type = 'text') => {
+    if (!session || !communityId || !name) return null;
+    const { data, error } = await supabase
+      .from('channels')
+      .insert({
+        community_id: communityId,
+        name,
+        type,
+        created_by: session.user.id
+      })
+      .select()
+      .single();
+
+    if (error || !data) {
+      console.error('Error creating channel:', error);
+      return null;
+    }
+    
+    await loadCommunities();
+    setActiveChannelId(data.id);
+    return data;
+  };
+
+  const joinCommunity = async (roomCode) => {
+    if (!session) return false;
+    
+    // Find community by room code
+    const { data: comms, error } = await supabase
+      .from('communities')
+      .select('*')
+      .eq('room_code', roomCode);
+
+    if (error || !comms || comms.length === 0) return false;
+
+    const comm = comms[0];
+
+    // Check if already a member
+    const { data: members } = await supabase
+      .from('community_members')
+      .select('*')
+      .eq('community_id', comm.id)
+      .eq('user_id', session.user.id);
+      
+    if (!members || members.length === 0) {
+      await supabase.from('community_members').insert({
+        community_id: comm.id,
+        user_id: session.user.id
+      });
+    }
+
+    await loadCommunities();
+    setActiveCommunityId(comm.id);
+    return true;
   };
 
   const loadMessages = useCallback(async (channelId) => {
@@ -496,6 +595,10 @@ export function AppProvider({ children }) {
       setActiveCommunityId,
       activeChannelId,
       setActiveChannelId,
+      createCommunity,
+      createChannel,
+      joinCommunity,
+      loadCommunities,
       messages,
       sendMessage,
       addReaction,

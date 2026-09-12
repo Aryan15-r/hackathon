@@ -35,6 +35,9 @@ export default function CommunityChannels() {
     setActiveCommunityId,
     activeChannelId,
     setActiveChannelId,
+    createCommunity,
+    joinCommunity,
+    createChannel,
     messages,
     sendMessage,
     addReaction,
@@ -56,6 +59,8 @@ export default function CommunityChannels() {
   const [isPasscodeModalOpen, setIsPasscodeModalOpen] = useState(false);
   const [targetPrivateComm, setTargetPrivateComm] = useState(null);
   const [isCreateCommModalOpen, setIsCreateCommModalOpen] = useState(false);
+  const [isCreateChannelModalOpen, setIsCreateChannelModalOpen] = useState(false);
+  const [newChannelName, setNewChannelName] = useState('');
   const [showMemberSidebar, setShowMemberSidebar] = useState(true);
 
   // Category collapsed state
@@ -141,39 +146,38 @@ export default function CommunityChannels() {
     if (!newComm.name.trim()) return;
 
     const roomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
-
-    const newHubObj = {
-      id: 'hub-' + Date.now(),
-      name: newComm.name,
-      icon: newComm.icon || '📚',
-      category: newComm.category || 'General',
-      roomCode,
-      channels: [
-        { id: 'chan-' + Date.now(), name: 'general', type: 'text', description: 'General channel' },
-        { id: 'chan-notes-' + Date.now(), name: 'notes-sharing', type: 'text', description: 'Share resources here' }
-      ]
-    };
-
-    setCommunities(prev => [...prev, newHubObj]);
-    setActiveCommunityId(newHubObj.id);
-    setActiveChannelId(newHubObj.channels[0].id);
+    const commData = { ...newComm, roomCode };
+    
+    await createCommunity(commData);
+    
     setIsCreateCommModalOpen(false);
     setNewComm({ name: '', description: '', icon: '📚', category: 'General', is_private: false, passcode: '' });
   };
 
-  const handleJoinCommunity = (e) => {
+  const handleJoinCommunity = async (e) => {
     e.preventDefault();
     if (!joinCode.trim()) return;
 
-    const existingHub = communities.find(c => c.roomCode === joinCode.trim().toUpperCase());
-    if (existingHub) {
-      setActiveCommunityId(existingHub.id);
-      setActiveChannelId(existingHub.channels[0]?.id);
+    const success = await joinCommunity(joinCode.trim().toUpperCase());
+    
+    if (success) {
       setIsJoinModalOpen(false);
       setJoinCode('');
     } else {
-      alert('Invalid room code or server not found locally.');
+      alert('Invalid room code or server not found.');
     }
+  };
+
+  const handleCreateChannel = async (e) => {
+    e.preventDefault();
+    if (!newChannelName.trim() || !activeComm.id) return;
+    
+    // Formatting channel name (lowercase, replace spaces with hyphens)
+    const formattedName = newChannelName.trim().toLowerCase().replace(/\s+/g, '-');
+    await createChannel(activeComm.id, formattedName, 'text');
+    
+    setIsCreateChannelModalOpen(false);
+    setNewChannelName('');
   };
 
   const emojiOptions = ['👍', '🔥', '🚀', '❤️', '💡', '💯'];
@@ -246,14 +250,14 @@ export default function CommunityChannels() {
             <span className="truncate">{activeComm.name || 'No Server Selected'}</span>
           </h2>
           {activeComm.id && (
-            <button onClick={() => setIsCreateCommModalOpen(true)} className="text-gray-400 hover:text-white transition-colors cursor-pointer">
+            <button onClick={() => setIsCreateChannelModalOpen(true)} className="text-gray-400 hover:text-white transition-colors cursor-pointer" title="Create Text Channel">
               <Plus size={18} />
             </button>
           )}
         </div>
-        {activeComm.roomCode && (
-          <div className="px-4 py-2 bg-[#1E1F22] text-[10px] text-gray-400 font-mono text-center shadow-inner cursor-pointer hover:text-white" onClick={() => navigator.clipboard.writeText(activeComm.roomCode)}>
-            Room Code: <span className="font-bold text-indigo-400">{activeComm.roomCode}</span> (Click to copy)
+        {activeComm.room_code && (
+          <div className="px-4 py-2 bg-[#1E1F22] text-[10px] text-gray-400 font-mono text-center shadow-inner cursor-pointer hover:text-white" onClick={() => navigator.clipboard.writeText(activeComm.room_code)}>
+            Room Code: <span className="font-bold text-indigo-400">{activeComm.room_code}</span> (Click to copy)
           </div>
         )}
 
@@ -640,6 +644,52 @@ export default function CommunityChannels() {
                   className="px-5 py-2 rounded-xl bg-[#5865F2] hover:bg-[#4752C4] text-xs font-bold text-white cursor-pointer"
                 >
                   Join Server
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* CREATE CHANNEL MODAL */}
+      {isCreateChannelModalOpen && (
+        <div className="fixed inset-0 z-[600] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="w-full max-w-md bg-[#313338] border border-white/10 rounded-2xl p-6 shadow-2xl space-y-4 animate-fade-in">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+              <h3 className="font-bold text-white text-base">Create Text Channel</h3>
+              <button onClick={() => setIsCreateChannelModalOpen(false)} className="text-gray-400 hover:text-white cursor-pointer">
+                <X size={18} />
+              </button>
+            </div>
+            <form onSubmit={handleCreateChannel} className="space-y-3 text-left">
+              <div>
+                <label className="text-xs font-semibold text-gray-300 block mb-1">Channel Name *</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"><Hash size={14} /></span>
+                  <input
+                    type="text"
+                    required
+                    placeholder="new-channel"
+                    value={newChannelName}
+                    onChange={e => setNewChannelName(e.target.value)}
+                    className="w-full h-10 bg-[#1E1F22] border border-white/10 rounded-xl pl-8 pr-3 text-xs text-white outline-none focus:border-[#5865F2]"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-3">
+                <button
+                  type="button"
+                  onClick={() => setIsCreateChannelModalOpen(false)}
+                  className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-medium text-gray-300 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 rounded-xl bg-[#5865F2] hover:bg-[#4752C4] text-xs font-bold text-white cursor-pointer"
+                >
+                  Create Channel
                 </button>
               </div>
             </form>
