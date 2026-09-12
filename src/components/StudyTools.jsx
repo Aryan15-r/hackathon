@@ -79,18 +79,35 @@ export default function StudyTools() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          prompt: `Generate 3 Q&A flashcards for studying "${flashcardTopicInput}". Format as 3 items: Q: [Question] A: [Answer]`
+          prompt: `Generate 3 study flashcards for topic "${flashcardTopicInput}". Format strictly as:\nQ1: [Question 1]\nA1: [Answer 1]\nQ2: [Question 2]\nA2: [Answer 2]\nQ3: [Question 3]\nA3: [Answer 3]`
         })
       });
 
       if (res.ok) {
         const data = await res.json();
-        const text = data.text;
-        const newDeck = [
-          { id: Date.now() + 1, question: `Key Concept in ${flashcardTopicInput}`, answer: text.substring(0, 150) },
-          { id: Date.now() + 2, question: `Core Formula / Rule for ${flashcardTopicInput}`, answer: 'Review AI Tutor for step-by-step mathematical proof.' }
-        ];
-        setCards(newDeck);
+        const text = data.text || '';
+        const lines = text.split('\n').filter(l => l.trim());
+        const extracted = [];
+        let curQ = '', curA = '';
+        lines.forEach(l => {
+          if (l.toUpperCase().startsWith('Q')) {
+            if (curQ && curA) extracted.push({ id: Date.now() + extracted.length, question: curQ, answer: curA });
+            curQ = l.replace(/^Q\d*:\s*/i, '').trim();
+            curA = '';
+          } else if (l.toUpperCase().startsWith('A')) {
+            curA = l.replace(/^A\d*:\s*/i, '').trim();
+          }
+        });
+        if (curQ && curA) extracted.push({ id: Date.now() + extracted.length, question: curQ, answer: curA });
+
+        if (extracted.length > 0) {
+          setCards(extracted);
+        } else {
+          setCards([
+            { id: Date.now() + 1, question: `What is the core principle of ${flashcardTopicInput}?`, answer: text.substring(0, 180) },
+            { id: Date.now() + 2, question: `Key Application & Formula for ${flashcardTopicInput}`, answer: 'Refer to StudySpace AI tutor for step-by-step derivation.' }
+          ]);
+        }
         setCurrentCardIdx(0);
         setIsFlipped(false);
       }

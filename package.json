@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "concurrently \"npx @tailwindcss/cli -i src/tailwind-input.css -o src/tailwind.css --watch\" \"vite\"",
+    "dev": "concurrently -k \"node server/index.js\" \"npx @tailwindcss/cli -i src/tailwind-input.css -o src/tailwind.css --watch\" \"vite\"",
     "build": "npx @tailwindcss/cli -i src/tailwind-input.css -o src/tailwind.css && vite build",
     "preview": "vite preview",
     "server": "node server/index.js",

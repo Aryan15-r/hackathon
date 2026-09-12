@@ -1,6 +1,5 @@
 @import "tailwindcss";
-@source "../src";
-@source "../index.html";
+@source "..";
 
 @theme {
   --breakpoint-sm: 40rem;

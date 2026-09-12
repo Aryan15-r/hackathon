@@ -450,6 +450,18 @@ input, textarea, select {
   color: var(--text-primary);
 }
 
+/* Ensure placeholder and input text have comfortable padding from left border */
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):not([type="hidden"]),
+textarea {
+  padding-left: 0.85rem;
+  padding-right: 0.85rem;
+}
+
+input.bg-transparent {
+  padding-left: 0.35rem;
+  padding-right: 0.35rem;
+}
+
 .form-input {
   width: 100%;
   padding: 0.75rem 1rem;

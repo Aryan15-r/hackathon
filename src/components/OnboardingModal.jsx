@@ -97,7 +97,10 @@ export default function OnboardingModal() {
             <label className="text-xs font-semibold text-[#1A1A2E]/70 flex items-center gap-1.5">
               <Mail size={13} /> Email Address (from Google)
             </label>
-            <div className="flex h-10 items-center rounded-lg border border-black/10 bg-black/[0.03] px-3.5 text-xs text-black/60 font-mono select-none">
+            <div
+              className="flex h-10 items-center rounded-lg border border-black/10 bg-black/[0.03] text-xs text-black/60 font-mono select-none"
+              style={{ paddingLeft: '0.85rem', paddingRight: '0.85rem' }}
+            >
               {initialEmail}
             </div>
           </div>
@@ -108,15 +111,19 @@ export default function OnboardingModal() {
               <label className="text-xs font-semibold text-[#1A1A2E]/70 flex items-center gap-1.5">
                 <User size={13} /> Username *
               </label>
-              <div className="relative flex h-10 items-center rounded-lg border border-black/15 bg-white px-3 focus-within:border-[#1E3A5F] focus-within:ring-2 focus-within:ring-[#1E3A5F]/10 transition-all">
-                <span className="text-black/40 text-xs mr-0.5">@</span>
+              <div
+                className="relative flex h-10 items-center rounded-lg border border-black/15 bg-white focus-within:border-[#1E3A5F] focus-within:ring-2 focus-within:ring-[#1E3A5F]/10 transition-all"
+                style={{ paddingLeft: '0.85rem', paddingRight: '0.85rem' }}
+              >
+                <span className="text-black/40 text-xs mr-1 font-mono">@</span>
                 <input
                   type="text"
                   required
                   placeholder="username"
                   value={username}
                   onChange={e => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
-                  className="w-full bg-transparent text-xs text-black outline-none font-medium"
+                  className="w-full bg-transparent text-xs text-black outline-none font-medium placeholder:text-black/35"
+                  style={{ paddingLeft: '0.35rem' }}
                 />
               </div>
             </div>
@@ -125,13 +132,17 @@ export default function OnboardingModal() {
               <label className="text-xs font-semibold text-[#1A1A2E]/70 flex items-center gap-1.5">
                 <User size={13} /> Full Name
               </label>
-              <div className="flex h-10 items-center rounded-lg border border-black/15 bg-white px-3 focus-within:border-[#1E3A5F] focus-within:ring-2 focus-within:ring-[#1E3A5F]/10 transition-all">
+              <div
+                className="flex h-10 items-center rounded-lg border border-black/15 bg-white focus-within:border-[#1E3A5F] focus-within:ring-2 focus-within:ring-[#1E3A5F]/10 transition-all"
+                style={{ paddingLeft: '0.85rem', paddingRight: '0.85rem' }}
+              >
                 <input
                   type="text"
                   placeholder="Full Name"
                   value={fullName}
                   onChange={e => setFullName(e.target.value)}
-                  className="w-full bg-transparent text-xs text-black outline-none font-medium"
+                  className="w-full bg-transparent text-xs text-black outline-none font-medium placeholder:text-black/35"
+                  style={{ paddingLeft: '0.25rem' }}
                 />
               </div>
             </div>
@@ -142,13 +153,17 @@ export default function OnboardingModal() {
             <label className="text-xs font-semibold text-[#1A1A2E]/70 flex items-center gap-1.5">
               <School size={13} /> College / University Name
             </label>
-            <div className="flex h-10 items-center rounded-lg border border-black/15 bg-white px-3 focus-within:border-[#1E3A5F] focus-within:ring-2 focus-within:ring-[#1E3A5F]/10 transition-all">
+            <div
+              className="flex h-10 items-center rounded-lg border border-black/15 bg-white focus-within:border-[#1E3A5F] focus-within:ring-2 focus-within:ring-[#1E3A5F]/10 transition-all"
+              style={{ paddingLeft: '0.85rem', paddingRight: '0.85rem' }}
+            >
               <input
                 type="text"
                 placeholder="e.g. National Institute of Technology, Delhi"
                 value={college}
                 onChange={e => setCollege(e.target.value)}
-                className="w-full bg-transparent text-xs text-black outline-none"
+                className="w-full bg-transparent text-xs text-black outline-none placeholder:text-black/35"
+                style={{ paddingLeft: '0.25rem' }}
               />
             </div>
           </div>
@@ -159,13 +174,17 @@ export default function OnboardingModal() {
               <label className="text-xs font-semibold text-[#1A1A2E]/70 flex items-center gap-1.5">
                 <BookOpen size={13} /> Department / Major
               </label>
-              <div className="flex h-10 items-center rounded-lg border border-black/15 bg-white px-3 focus-within:border-[#1E3A5F] focus-within:ring-2 focus-within:ring-[#1E3A5F]/10 transition-all">
+              <div
+                className="flex h-10 items-center rounded-lg border border-black/15 bg-white focus-within:border-[#1E3A5F] focus-within:ring-2 focus-within:ring-[#1E3A5F]/10 transition-all"
+                style={{ paddingLeft: '0.85rem', paddingRight: '0.85rem' }}
+              >
                 <input
                   type="text"
                   placeholder="e.g. Computer Science & Eng."
                   value={branch}
                   onChange={e => setBranch(e.target.value)}
-                  className="w-full bg-transparent text-xs text-black outline-none"
+                  className="w-full bg-transparent text-xs text-black outline-none placeholder:text-black/35"
+                  style={{ paddingLeft: '0.25rem' }}
                 />
               </div>
             </div>
@@ -177,7 +196,8 @@ export default function OnboardingModal() {
               <select
                 value={year}
                 onChange={e => setYear(e.target.value)}
-                className="w-full h-10 rounded-lg border border-black/15 bg-white px-2.5 text-xs text-black outline-none cursor-pointer focus:border-[#1E3A5F]"
+                className="w-full h-10 rounded-lg border border-black/15 bg-white text-xs text-black outline-none cursor-pointer focus:border-[#1E3A5F]"
+                style={{ paddingLeft: '0.85rem', paddingRight: '0.85rem' }}
               >
                 <option value="1">1st Year (Freshman)</option>
                 <option value="2">2nd Year (Sophomore)</option>

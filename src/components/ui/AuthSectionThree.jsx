@@ -439,7 +439,10 @@ function InputField({
       <label className="text-xs font-semibold text-black/70 block">
         {label}
       </label>
-      <div className="relative flex h-11 items-center rounded-lg border border-black/15 bg-white px-3.5 focus-within:border-black/50 transition-colors">
+      <div
+        className="relative flex h-11 items-center rounded-lg border border-black/15 bg-white focus-within:border-black/50 transition-colors"
+        style={{ paddingLeft: '0.85rem', paddingRight: '0.85rem' }}
+      >
         <input
           type={
             type === "password" ? (showPassword ? "text" : "password") : type
@@ -447,7 +450,8 @@ function InputField({
           value={value}
           onChange={(e) => setValue(e.target.value)}
           placeholder={placeholder}
-          className="w-full bg-transparent text-sm text-black outline-none placeholder:text-black/35 pr-8"
+          className="w-full bg-transparent text-sm text-black outline-none placeholder:text-black/40"
+          style={{ paddingLeft: '0.25rem', paddingRight: type === 'password' ? '2.5rem' : '0.25rem' }}
         />
         {type === "password" && (
           <button
