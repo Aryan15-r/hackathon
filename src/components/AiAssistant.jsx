@@ -1,0 +1,392 @@
+import React, { useState, useRef, useEffect } from 'react';
+import { useApp } from '../context/AppContext';
+import {
+  Sparkles,
+  Send,
+  Trash2,
+  Copy,
+  Check,
+  Zap,
+  Code,
+  BookOpen,
+  HelpCircle,
+  Calculator,
+  RefreshCw
+} from 'lucide-react';
+
+export default function AiAssistant() {
+  const { aiHistory, setAiHistory, aiModelUsed, setAiModelUsed } = useApp();
+  const [inputPrompt, setInputPrompt] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [copiedIndex, setCopiedIndex] = useState(null);
+  const messagesEndRef = useRef(null);
+
+  const promptTemplates = [
+    { label: '📐 Math Step-by-Step', prompt: 'Solve the following math problem step-by-step with formulas and clear explanations: ' },
+    { label: '💻 Code & Complexity', prompt: 'Write an efficient solution in C++/Python with time and space complexity analysis for: ' },
+    { label: '📝 Summarize Notes', prompt: 'Provide a concise bulleted summary and key takeaways for these lecture notes: ' },
+    { label: '🧠 Practice Questions', prompt: 'Generate 3 high-yield practice questions with detailed answers on: ' },
+  ];
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [aiHistory, loading]);
+
+  const handleSend = async (customPrompt) => {
+    const textToSend = customPrompt || inputPrompt;
+    if (!textToSend.trim() || loading) return;
+
+    // Append user message
+    const updatedHistory = [...aiHistory, { role: 'user', text: textToSend }];
+    setAiHistory(updatedHistory);
+    if (!customPrompt) setInputPrompt('');
+    setLoading(true);
+
+    try {
+      const response = await fetch('/api/ai/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: textToSend,
+          systemInstruction: 'You are StudySpace AI, an intelligent, empathetic web tutor for college students. Explain concepts step-by-step with clear markdown headings, clean math formulas, and practical code examples.',
+          history: updatedHistory.slice(-6)
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setAiHistory(prev => [...prev, { role: 'model', text: data.text, modelUsed: data.modelUsed }]);
+        if (data.modelUsed) setAiModelUsed(data.modelUsed);
+      } else {
+        setAiHistory(prev => [...prev, {
+          role: 'model',
+          text: '⚠️ **Gemini AI Service Alert**: The backend API cascade experienced a temporary timeout. Please try resending your prompt.'
+        }]);
+      }
+    } catch (err) {
+      setAiHistory(prev => [...prev, {
+        role: 'model',
+        text: '⚠️ **Network Error**: Unable to reach StudySpace backend service.'
+      }]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCopy = (text, index) => {
+    navigator.clipboard.writeText(text);
+    setCopiedIndex(index);
+    setTimeout(() => setCopiedIndex(null), 2000);
+  };
+
+  const handleClear = () => {
+    setAiHistory([
+      {
+        role: 'model',
+        text: '👋 Chat history cleared. How can I assist your study session now?'
+      }
+    ]);
+  };
+
+  return (
+    <div className="ai-page animate-fade-in">
+      {/* Top Banner with Model Cascade Info */}
+      <div className="ai-header glass-card">
+        <div className="header-left">
+          <div className="sparkle-badge">
+            <Sparkles size={20} />
+          </div>
+          <div>
+            <h2>StudySpace AI Tutor</h2>
+            <span className="subtext">Zero-Downtime Multi-Model Cascade Engine (16,384 Token Limit)</span>
+          </div>
+        </div>
+
+        <div className="header-actions">
+          <div className="model-cascade-pill glass-card">
+            <Zap size={14} className="cascade-icon" />
+            <span>Active Model: <strong>{aiModelUsed}</strong></span>
+          </div>
+
+          <button className="clear-btn glass-card" onClick={handleClear} title="Clear conversation">
+            <Trash2 size={16} />
+          </button>
+        </div>
+      </div>
+
+      {/* Quick Prompt Templates */}
+      <div className="prompt-templates-row">
+        {promptTemplates.map((template, idx) => (
+          <button
+            key={idx}
+            className="template-btn glass-card glass-card-interactive"
+            onClick={() => {
+              setInputPrompt(template.prompt);
+            }}
+          >
+            {template.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Message Chat Feed */}
+      <div className="chat-feed glass-card">
+        {aiHistory.map((msg, index) => (
+          <div key={index} className={`chat-message ${msg.role}`}>
+            <div className="msg-header">
+              <div className="author-info">
+                {msg.role === 'user' ? (
+                  <span className="author-name user">You</span>
+                ) : (
+                  <span className="author-name model">
+                    <Sparkles size={14} /> StudySpace AI {msg.modelUsed && <small>({msg.modelUsed})</small>}
+                  </span>
+                )}
+              </div>
+
+              {msg.role === 'model' && (
+                <button
+                  className="copy-btn"
+                  onClick={() => handleCopy(msg.text, index)}
+                  title="Copy text"
+                >
+                  {copiedIndex === index ? <Check size={14} className="copied" /> : <Copy size={14} />}
+                </button>
+              )}
+            </div>
+
+            <div className="msg-content">
+              {msg.text.split('\n').map((line, lIdx) => (
+                <p key={lIdx}>{line}</p>
+              ))}
+            </div>
+          </div>
+        ))}
+
+        {loading && (
+          <div className="chat-message model loading">
+            <div className="typing-indicator">
+              <RefreshCw size={16} className="spin-icon" />
+              <span>Querying Gemini Cascade Engine...</span>
+            </div>
+          </div>
+        )}
+
+        <div ref={messagesEndRef} />
+      </div>
+
+      {/* Chat Input Bar */}
+      <form onSubmit={(e) => { e.preventDefault(); handleSend(); }} className="chat-input-container glass-card">
+        <input
+          type="text"
+          placeholder="Ask StudySpace AI any question or concept doubt..."
+          value={inputPrompt}
+          onChange={e => setInputPrompt(e.target.value)}
+          disabled={loading}
+          className="chat-input"
+        />
+        <button type="submit" disabled={!inputPrompt.trim() || loading} className="gradient-button">
+          <Send size={16} />
+          <span>Send</span>
+        </button>
+      </form>
+
+      {/* Embedded AI Styles */}
+      <style>{`
+        .ai-page {
+          display: flex;
+          flex-direction: column;
+          gap: 1.25rem;
+          height: calc(100vh - 120px);
+        }
+
+        .ai-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 1.25rem 1.5rem;
+        }
+
+        .header-left {
+          display: flex;
+          align-items: center;
+          gap: 0.85rem;
+        }
+
+        .sparkle-badge {
+          width: 42px;
+          height: 42px;
+          border-radius: var(--radius-md);
+          background: rgba(99, 102, 241, 0.18);
+          color: #818cf8;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .subtext {
+          font-size: 0.78rem;
+          color: var(--text-muted);
+        }
+
+        .header-actions {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+        }
+
+        .model-cascade-pill {
+          display: flex;
+          align-items: center;
+          gap: 0.4rem;
+          padding: 0.45rem 0.85rem;
+          font-size: 0.78rem;
+          color: #a5b4fc;
+          background: rgba(99, 102, 241, 0.12);
+        }
+
+        .cascade-icon {
+          color: #10b981;
+        }
+
+        .clear-btn {
+          width: 36px;
+          height: 36px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: var(--radius-sm);
+          color: var(--text-muted);
+          cursor: pointer;
+        }
+
+        .clear-btn:hover {
+          color: var(--accent-red);
+        }
+
+        .prompt-templates-row {
+          display: flex;
+          gap: 0.75rem;
+          overflow-x: auto;
+          padding-bottom: 0.25rem;
+        }
+
+        .template-btn {
+          padding: 0.55rem 0.95rem;
+          font-size: 0.82rem;
+          font-weight: 500;
+          color: var(--text-secondary);
+          white-space: nowrap;
+          cursor: pointer;
+        }
+
+        .chat-feed {
+          flex: 1;
+          overflow-y: auto;
+          padding: 1.5rem;
+          display: flex;
+          flex-direction: column;
+          gap: 1.25rem;
+        }
+
+        .chat-message {
+          display: flex;
+          flex-direction: column;
+          gap: 0.5rem;
+          padding: 1.1rem 1.25rem;
+          border-radius: var(--radius-md);
+          max-width: 90%;
+        }
+
+        .chat-message.user {
+          align-self: flex-end;
+          background: rgba(99, 102, 241, 0.18);
+          border: 1px solid rgba(99, 102, 241, 0.3);
+        }
+
+        .chat-message.model {
+          align-self: flex-start;
+          background: rgba(255, 255, 255, 0.04);
+          border: 1px solid var(--card-border);
+        }
+
+        .msg-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+        }
+
+        .author-name {
+          font-size: 0.8rem;
+          font-weight: 700;
+          display: flex;
+          align-items: center;
+          gap: 0.35rem;
+        }
+
+        .author-name.user { color: #a5b4fc; }
+        .author-name.model { color: var(--accent-cyan); }
+        .author-name.model small { font-weight: 400; color: var(--text-muted); }
+
+        .copy-btn {
+          background: transparent;
+          border: none;
+          color: var(--text-muted);
+          cursor: pointer;
+        }
+
+        .copy-btn:hover { color: var(--text-primary); }
+        .copy-btn .copied { color: var(--accent-green); }
+
+        .msg-content {
+          font-size: 0.9375rem;
+          line-height: 1.6;
+          color: var(--text-primary);
+          display: flex;
+          flex-direction: column;
+          gap: 0.4rem;
+        }
+
+        .typing-indicator {
+          display: flex;
+          align-items: center;
+          gap: 0.6rem;
+          font-size: 0.85rem;
+          color: var(--accent-primary);
+        }
+
+        .spin-icon {
+          animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+          100% { transform: rotate(360deg); }
+        }
+
+        .chat-input-container {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          padding: 0.75rem 1rem;
+        }
+
+        .chat-input {
+          flex: 1;
+          background: transparent;
+          border: none;
+          color: var(--text-primary);
+          font-family: 'Inter', sans-serif;
+          font-size: 0.95rem;
+        }
+
+        .chat-input:focus {
+          outline: none;
+        }
+      `}</style>
+    </div>
+  );
+}
