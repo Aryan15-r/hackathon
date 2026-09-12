@@ -1,10 +1,11 @@
 /* ============================================================
    StudySpace — Warm Light Theme with Navy Navbar
    ============================================================ */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800&display=swap');
 @import "tailwindcss";
 @source "../index.html";
 @source "./**/*.jsx";
+@source "./**/*.js";
+
 
 
 
@@ -82,7 +83,7 @@ p { color: var(--text-secondary); line-height: 1.6; }
 a { color: var(--accent-primary); text-decoration: none; }
 
 /* ── App Layout ──────────────────────────────────────────────── */
-#root { display: flex; min-height: 100vh; }
+#root { min-height: 100vh; width: 100%; }
 
 .app-container {
   display: flex;
