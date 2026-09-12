@@ -8,6 +8,7 @@ export function AppProvider({ children }) {
   const [session, setSession] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [userProfile, setUserProfile] = useState(null);
+  const [isOnboardingRequired, setIsOnboardingRequired] = useState(false);
 
   // ── Navigation ────────────────────────────────────────────────────────
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -55,6 +56,7 @@ export function AppProvider({ children }) {
         fetchProfile(session.user.id);
       } else {
         setUserProfile(null);
+        setIsOnboardingRequired(false);
         setTasks([]);
         setCommunities([]);
         setMessages([]);
@@ -80,14 +82,68 @@ export function AppProvider({ children }) {
   // Fetch / update profile
   // ─────────────────────────────────────────────────────────────────────
   const fetchProfile = async (userId) => {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .single();
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
 
-    if (!error && data) setUserProfile(data);
-    setAuthLoading(false);
+      const registeredKey = `studyspace_registered_${userId}`;
+      const isLocallyRegistered = localStorage.getItem(registeredKey) === 'true';
+
+      if (!error && data) {
+        setUserProfile(data);
+        if (data.username && (data.college || isLocallyRegistered)) {
+          setIsOnboardingRequired(false);
+        } else {
+          setIsOnboardingRequired(true);
+        }
+      } else {
+        // No profile in table yet: prompt onboarding
+        setIsOnboardingRequired(true);
+      }
+    } catch (e) {
+      console.warn('Profile fetch check error:', e);
+      setIsOnboardingRequired(true);
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const completeRegistration = async ({ username, full_name, college, branch, year }) => {
+    if (!session) return;
+    const userId = session.user.id;
+    const avatar_url = session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture || '';
+
+    const profilePayload = {
+      id: userId,
+      username: username.trim().toLowerCase(),
+      full_name: full_name.trim(),
+      avatar_url,
+      college: college?.trim() || '',
+      branch: branch?.trim() || '',
+      year: year ? parseInt(year, 10) : 1,
+      updated_at: new Date().toISOString()
+    };
+
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .upsert(profilePayload)
+        .select()
+        .single();
+
+      localStorage.setItem(`studyspace_registered_${userId}`, 'true');
+      setUserProfile(data || profilePayload);
+      setIsOnboardingRequired(false);
+      return { data: data || profilePayload, error };
+    } catch (err) {
+      localStorage.setItem(`studyspace_registered_${userId}`, 'true');
+      setUserProfile(profilePayload);
+      setIsOnboardingRequired(false);
+      return { data: profilePayload, error: null };
+    }
   };
 
   const updateProfile = async (updates) => {
@@ -291,6 +347,114 @@ export function AppProvider({ children }) {
   }, [pomodoroIsRunning, pomodoroSeconds, pomodoroMode, completedSessions, totalFocusedSecondsToday, persistStudyStats]);
 
   // ─────────────────────────────────────────────────────────────────────
+  // Alarms & Voice Rooms State Management
+  // ─────────────────────────────────────────────────────────────────────
+  const [triggeredAlarm, setTriggeredAlarm] = useState(null);
+  const [dismissedAlarmIds, setDismissedAlarmIds] = useState(new Set());
+
+  // Voice rooms state
+  const [currentVoiceRoom, setCurrentVoiceRoom] = useState(null);
+  const [isMuted, setIsMuted] = useState(false);
+  const [isDeafened, setIsDeafened] = useState(false);
+  const [isScreenSharing, setIsScreenSharing] = useState(false);
+
+  // Play browser Web Audio API dual-tone chime
+  const playAlarmChime = useCallback(() => {
+    try {
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContext) return;
+      const ctx = new AudioContext();
+      
+      const playTone = (freq, start, duration) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, ctx.currentTime + start);
+        gain.gain.setValueAtTime(0.18, ctx.currentTime + start);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + start + duration);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(ctx.currentTime + start);
+        osc.stop(ctx.currentTime + start + duration);
+      };
+
+      playTone(587.33, 0, 0.25);   // D5
+      playTone(880.00, 0.25, 0.4);  // A5
+      playTone(1174.66, 0.6, 0.6); // D6
+    } catch (e) {
+      console.warn('Audio chime error:', e);
+    }
+  }, []);
+
+  const triggerAlarm = useCallback((alarmData) => {
+    setTriggeredAlarm(alarmData);
+    playAlarmChime();
+  }, [playAlarmChime]);
+
+  const dismissAlarm = useCallback(() => {
+    if (triggeredAlarm?.id) {
+      setDismissedAlarmIds(prev => new Set(prev).add(triggeredAlarm.id));
+    }
+    setTriggeredAlarm(null);
+  }, [triggeredAlarm]);
+
+  const snoozeAlarm = useCallback((minutes = 5) => {
+    if (!triggeredAlarm) return;
+    const snoozeUntil = new Date(Date.now() + minutes * 60 * 1000);
+    const alarmId = triggeredAlarm.id;
+    setTriggeredAlarm(null);
+    setTimeout(() => {
+      triggerAlarm({ ...triggeredAlarm, snoozed: true });
+    }, minutes * 60 * 1000);
+  }, [triggeredAlarm, triggerAlarm]);
+
+  // Real-time interval checker for tasks due time
+  useEffect(() => {
+    const checkTaskAlarms = () => {
+      if (triggeredAlarm || !tasks.length) return;
+      const now = new Date();
+      const todayStr = now.toISOString().split('T')[0];
+      const currentHours = String(now.getHours()).padStart(2, '0');
+      const currentMinutes = String(now.getMinutes()).padStart(2, '0');
+      const currentTimeStr = `${currentHours}:${currentMinutes}`;
+
+      const dueTask = tasks.find(t => {
+        if (!t.due_time || t.status === 'completed') return false;
+        if (dismissedAlarmIds.has(t.id)) return false;
+        const taskDate = t.due_date ? t.due_date : todayStr;
+        return taskDate === todayStr && t.due_time === currentTimeStr;
+      });
+
+      if (dueTask) {
+        triggerAlarm({
+          id: dueTask.id,
+          title: dueTask.title,
+          category: dueTask.category || 'Study Task',
+          due_time: dueTask.due_time,
+          description: dueTask.description,
+          task: dueTask
+        });
+      }
+    };
+
+    const interval = setInterval(checkTaskAlarms, 10000);
+    checkTaskAlarms();
+    return () => clearInterval(interval);
+  }, [tasks, triggeredAlarm, dismissedAlarmIds, triggerAlarm]);
+
+  // Voice channel helpers
+  const joinVoiceRoom = (roomName) => {
+    setCurrentVoiceRoom(roomName);
+    setIsMuted(false);
+    setIsDeafened(false);
+  };
+
+  const leaveVoiceRoom = () => {
+    setCurrentVoiceRoom(null);
+    setIsScreenSharing(false);
+  };
+
+  // ─────────────────────────────────────────────────────────────────────
   // Auth Actions
   // ─────────────────────────────────────────────────────────────────────
   const signOut = async () => {
@@ -306,6 +470,9 @@ export function AppProvider({ children }) {
       session,
       authLoading,
       signOut,
+      isOnboardingRequired,
+      setIsOnboardingRequired,
+      completeRegistration,
       // Profile
       userProfile,
       setUserProfile,
@@ -346,6 +513,23 @@ export function AppProvider({ children }) {
       setPomodoroMode,
       completedSessions,
       totalFocusedSecondsToday,
+      setTotalFocusedSecondsToday,
+      // Alarms
+      triggeredAlarm,
+      triggerAlarm,
+      dismissAlarm,
+      snoozeAlarm,
+      playAlarmChime,
+      // Voice Rooms
+      currentVoiceRoom,
+      isMuted,
+      setIsMuted,
+      isDeafened,
+      setIsDeafened,
+      isScreenSharing,
+      setIsScreenSharing,
+      joinVoiceRoom,
+      leaveVoiceRoom,
     }}>
       {children}
     </AppContext.Provider>

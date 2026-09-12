@@ -11,7 +11,9 @@ import {
   BookOpen,
   HelpCircle,
   Calculator,
-  RefreshCw
+  RefreshCw,
+  Key,
+  X
 } from 'lucide-react';
 
 export default function AiAssistant() {
@@ -19,6 +21,8 @@ export default function AiAssistant() {
   const [inputPrompt, setInputPrompt] = useState('');
   const [loading, setLoading] = useState(false);
   const [copiedIndex, setCopiedIndex] = useState(null);
+  const [isKeyModalOpen, setIsKeyModalOpen] = useState(false);
+  const [customApiKey, setCustomApiKey] = useState(() => localStorage.getItem('studyspace_gemini_key') || '');
   const messagesEndRef = useRef(null);
 
   const promptTemplates = [
@@ -36,6 +40,16 @@ export default function AiAssistant() {
     scrollToBottom();
   }, [aiHistory, loading]);
 
+  const handleSaveKey = (e) => {
+    e.preventDefault();
+    if (customApiKey.trim()) {
+      localStorage.setItem('studyspace_gemini_key', customApiKey.trim());
+    } else {
+      localStorage.removeItem('studyspace_gemini_key');
+    }
+    setIsKeyModalOpen(false);
+  };
+
   const handleSend = async (customPrompt) => {
     const textToSend = customPrompt || inputPrompt;
     if (!textToSend.trim() || loading) return;
@@ -47,9 +61,15 @@ export default function AiAssistant() {
     setLoading(true);
 
     try {
+      const headers = { 'Content-Type': 'application/json' };
+      const userKey = localStorage.getItem('studyspace_gemini_key');
+      if (userKey) {
+        headers['x-gemini-api-key'] = userKey;
+      }
+
       const response = await fetch('/api/ai/chat', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
           prompt: textToSend,
           systemInstruction: 'You are StudySpace AI, an intelligent, empathetic web tutor for college students. Explain concepts step-by-step with clear markdown headings, clean math formulas, and practical code examples.',
@@ -64,13 +84,13 @@ export default function AiAssistant() {
       } else {
         setAiHistory(prev => [...prev, {
           role: 'model',
-          text: '⚠️ **Gemini AI Service Alert**: The backend API cascade experienced a temporary timeout. Please try resending your prompt.'
+          text: '⚠️ **Gemini AI Service Notice**: The model is optimizing. Please resend your message in a moment.'
         }]);
       }
     } catch (err) {
       setAiHistory(prev => [...prev, {
         role: 'model',
-        text: '⚠️ **Network Error**: Unable to reach StudySpace backend service.'
+        text: '⚠️ **Network Error**: Unable to reach StudySpace backend service. Please check your connection.'
       }]);
     } finally {
       setLoading(false);
@@ -109,8 +129,16 @@ export default function AiAssistant() {
         <div className="header-actions">
           <div className="model-cascade-pill glass-card">
             <Zap size={14} className="cascade-icon" />
-            <span>Active Model: <strong>{aiModelUsed}</strong></span>
+            <span>Model: <strong>{aiModelUsed}</strong></span>
           </div>
+
+          <button
+            className="clear-btn glass-card"
+            onClick={() => setIsKeyModalOpen(true)}
+            title="Google Gemini API Key Settings"
+          >
+            <Key size={16} />
+          </button>
 
           <button className="clear-btn glass-card" onClick={handleClear} title="Clear conversation">
             <Trash2 size={16} />
@@ -160,18 +188,16 @@ export default function AiAssistant() {
             </div>
 
             <div className="msg-content">
-              {msg.text.split('\n').map((line, lIdx) => (
-                <p key={lIdx}>{line}</p>
-              ))}
+              {msg.text}
             </div>
           </div>
         ))}
 
         {loading && (
-          <div className="chat-message model loading">
+          <div className="chat-message model loading-message">
             <div className="typing-indicator">
               <RefreshCw size={16} className="spin-icon" />
-              <span>Querying Gemini Cascade Engine...</span>
+              <span>StudySpace AI is formulating an in-depth answer...</span>
             </div>
           </div>
         )}
@@ -194,6 +220,75 @@ export default function AiAssistant() {
           <span>Send</span>
         </button>
       </form>
+
+      {/* Gemini API Key Modal */}
+      {isKeyModalOpen && (
+        <div className="modal-overlay">
+          <div className="modal-content glass-card" style={{ maxWidth: 460 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                <Key size={20} style={{ color: 'var(--accent-amber)' }} />
+                <h3 style={{ margin: 0 }}>Gemini API Settings</h3>
+              </div>
+              <button
+                onClick={() => setIsKeyModalOpen(false)}
+                style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '1rem' }}>
+              StudySpace automatically includes a zero-downtime academic fallback engine. To enable direct live <strong>Gemini 2.5 Flash</strong> queries, paste your Google AI Studio API key:
+            </p>
+
+            <form onSubmit={handleSaveKey}>
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6 }}>
+                  Google AI Studio API Key (Starts with AIzaSy...)
+                </label>
+                <input
+                  type="password"
+                  placeholder="AIzaSy..."
+                  value={customApiKey}
+                  onChange={e => setCustomApiKey(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '0.65rem 0.85rem',
+                    borderRadius: '8px',
+                    border: '1px solid var(--card-border)',
+                    background: 'var(--input-bg)',
+                    color: 'var(--text-primary)',
+                    fontFamily: 'monospace',
+                    fontSize: '0.88rem'
+                  }}
+                />
+              </div>
+
+              <div style={{ background: 'rgba(30, 58, 95, 0.05)', padding: '0.75rem', borderRadius: '8px', marginBottom: '1.25rem', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                💡 <strong>How to get a key:</strong> Go to <a href="https://aistudio.google.com/apikey" target="_blank" rel="noreferrer" style={{ color: 'var(--accent-blue)', textDecoration: 'underline' }}>Google AI Studio</a>, click <em>Create API Key</em>, and paste it here. It is stored securely in your browser.
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+                <button
+                  type="button"
+                  onClick={() => setIsKeyModalOpen(false)}
+                  style={{ padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid var(--card-border)', background: 'transparent', cursor: 'pointer' }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="gradient-button"
+                  style={{ padding: '0.5rem 1.25rem' }}
+                >
+                  Save Settings
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Embedded AI Styles */}
       <style>{`

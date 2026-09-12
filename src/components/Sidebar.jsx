@@ -3,7 +3,7 @@ import { useApp } from '../context/AppContext';
 import {
   LayoutDashboard, Bot, CheckSquare, MessageSquare,
   Timer, FileText, Calculator, Search,
-  GraduationCap, Sparkles, ChevronRight, LogOut
+  GraduationCap, Sparkles, ChevronRight, LogOut, UserCheck
 } from 'lucide-react';
 
 export default function Sidebar() {
@@ -16,14 +16,15 @@ export default function Sidebar() {
   const initials = displayName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
 
   const navItems = [
-    { id: 'dashboard',       label: 'Dashboard',       icon: LayoutDashboard },
-    { id: 'ai-assistant',    label: 'AI Assistant',    icon: Bot,            badge: 'Gemini' },
-    { id: 'todo',            label: 'Tasks & Exams',   icon: CheckSquare,    badge: pendingCount > 0 ? pendingCount : null },
-    { id: 'community',       label: 'Community Hub',   icon: MessageSquare,  badge: 'Live' },
-    { id: 'study-tools',     label: 'Study Tools',     icon: Timer },
-    { id: 'pdf-tools',       label: 'PDF Studio',      icon: FileText },
-    { id: 'calculator',      label: 'Scientific Calc', icon: Calculator },
-    { id: 'academic-search', label: 'Academic Search', icon: Search },
+    { id: 'dashboard',       label: 'Dashboard',            icon: LayoutDashboard },
+    { id: 'ai-assistant',    label: 'AI Assistant',         icon: Bot,            badge: 'Gemini' },
+    { id: 'todo',            label: 'Tasks & Exams',        icon: CheckSquare,    badge: pendingCount > 0 ? pendingCount : null },
+    { id: 'attendance',      label: 'Attendance & Tracker', icon: UserCheck,      badge: '75%' },
+    { id: 'community',       label: 'Community Hub',        icon: MessageSquare,  badge: 'Live' },
+    { id: 'study-tools',     label: 'Study Tools',          icon: Timer },
+    { id: 'pdf-tools',       label: 'PDF Studio',           icon: FileText },
+    { id: 'calculator',      label: 'Scientific Calc',      icon: Calculator },
+    { id: 'academic-search', label: 'Academic Search',      icon: Search },
   ];
 
   return (

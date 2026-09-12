@@ -14,7 +14,9 @@ import {
   Calculator,
   Search,
   BookOpen,
-  ChevronRight
+  ChevronRight,
+  UserCheck,
+  Target
 } from 'lucide-react';
 
 export default function Dashboard() {
@@ -215,8 +217,43 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Right Column: Community Feed Preview & Study Shortcuts */}
+        {/* Right Column: Attendance & Study Progress, Community, AI */}
         <div className="dashboard-column">
+          {/* Daily Study Progress & Attendance Card */}
+          <div className="section-card glass-card">
+            <div className="section-header">
+              <div className="section-title">
+                <UserCheck size={18} className="title-icon" style={{ color: 'var(--navy)' }} />
+                <h3>Daily Progress & Attendance</h3>
+              </div>
+              <button className="text-link-btn" onClick={() => setActiveTab('attendance')}>
+                Open Tracker <ChevronRight size={14} />
+              </button>
+            </div>
+
+            <div style={{ padding: '0.4rem 0', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <div style={{ background: 'rgba(30, 58, 95, 0.04)', padding: '0.85rem 1rem', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div>
+                  <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.05em' }}>TODAY'S STUDY GOAL</div>
+                  <div style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--navy)', marginTop: 2 }}>{focusMinutes} mins logged</div>
+                </div>
+                <button
+                  onClick={() => setActiveTab('attendance')}
+                  style={{ fontSize: '0.75rem', padding: '0.35rem 0.75rem', borderRadius: '8px', background: 'var(--navy)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 600 }}
+                >
+                  Log Session
+                </button>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.2rem 0.25rem' }}>
+                <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>College 75% Rule:</span>
+                <span style={{ fontSize: '0.75rem', fontWeight: 700, padding: '0.2rem 0.6rem', borderRadius: '6px', background: '#ECFDF5', color: '#059669', border: '1px solid #A7F3D0' }}>
+                  ✓ On Track (Target 75%)
+                </span>
+              </div>
+            </div>
+          </div>
+
           <div className="section-card glass-card">
             <div className="section-header">
               <div className="section-title">

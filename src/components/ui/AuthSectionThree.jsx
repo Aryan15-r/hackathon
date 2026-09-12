@@ -136,19 +136,19 @@ export default function AuthSectionThree() {
   };
 
   return (
-    <section className="min-h-screen w-full bg-[#FDF6EC] p-3 md:p-6 text-[#1A1A2E] antialiased [font-synthesis:none]">
-      <div className="grid min-h-[calc(100vh-3rem)] w-full max-w-[1400px] mx-auto gap-6 lg:grid-cols-2">
+    <section className="min-h-screen w-full bg-white text-[#1A1A2E] antialiased [font-synthesis:none] overflow-x-hidden">
+      <div className="grid min-h-screen w-full lg:grid-cols-2">
         {/* Left Side - Auth Form */}
-        <div className="flex w-full flex-col justify-center rounded-2xl border border-black/5 bg-white px-6 py-12 shadow-xl shadow-black/[0.03] lg:px-14 lg:py-20 xl:px-20">
-          <div className="mx-auto w-full max-w-[420px]">
+        <div className="flex min-h-screen w-full flex-col justify-center items-center bg-white px-6 py-10 sm:px-10 lg:px-12 xl:px-16">
+          <div className="w-full max-w-[420px] mx-auto">
             <div>
-              <h1 className="text-3xl font-medium tracking-tight sm:text-4xl text-black ">
+              <h1 className="text-3xl font-medium tracking-tight sm:text-4xl text-black">
                 {view === "signup" && "Create an account"}
                 {view === "signin" && "Welcome back"}
                 {view === "forgot-password" && "Reset Password"}
                 {view === "otp" && "Verify Email"}
               </h1>
-              <p className="mt-2 text-sm text-black/60 ">
+              <p className="mt-2 text-sm text-black/60">
                 {view === "signup" && "Join StudySpace to organize your academic life."}
                 {view === "signin" && "Sign in to access your dashboard."}
                 {view === "forgot-password" && "Enter your email and we'll send you a link to reset your password."}
@@ -164,7 +164,7 @@ export default function AuthSectionThree() {
                     type="button"
                     onClick={handleGoogleSignIn}
                     disabled={googleLoading || loading}
-                    className="flex h-11 w-full min-w-0 items-center justify-center gap-2 rounded-lg border border-black/15 bg-white px-4 text-sm font-medium text-black transition-colors hover:bg-black/[0.02]     disabled:opacity-50"
+                    className="flex h-11 w-full min-w-0 items-center justify-center gap-2 rounded-lg border border-black/15 bg-white px-4 text-sm font-medium text-black transition-colors hover:bg-black/[0.03] disabled:opacity-50 cursor-pointer"
                   >
                     {googleLoading ? <Loader2 className="animate-spin size-4" /> : <GoogleIcon />}
                     <span className="whitespace-nowrap">
@@ -175,32 +175,32 @@ export default function AuthSectionThree() {
                   <button
                     type="button"
                     disabled
-                    className="flex h-11 w-full min-w-0 items-center justify-center gap-2 rounded-lg border border-black/15 bg-white px-4 text-sm font-medium text-black transition-colors hover:bg-black/[0.02]     opacity-50 cursor-not-allowed"
+                    className="flex h-11 w-full min-w-0 items-center justify-center gap-2 rounded-lg border border-black/15 bg-white px-4 text-sm font-medium text-black transition-colors opacity-50 cursor-not-allowed"
                   >
                     <AppleIcon />
                     <span className="whitespace-nowrap">Sign in with Apple</span>
                   </button>
                 </div>
 
-                <div className="my-6 flex items-center gap-4 text-xs font-medium text-black/40 ">
-                  <div className="h-px flex-1 bg-black/10 " />
+                <div className="my-6 flex items-center gap-4 text-xs font-medium text-black/40">
+                  <div className="h-px flex-1 bg-black/10" />
                   or
-                  <div className="h-px flex-1 bg-black/10 " />
+                  <div className="h-px flex-1 bg-black/10" />
                 </div>
               </>
             )}
 
             {/* Error / Success Messages */}
             {error && (
-              <div className="mb-4 flex items-center gap-2 rounded-lg bg-red-50 p-3 text-sm text-red-600  ">
-                <AlertCircle size={16} />
-                {error}
+              <div className="mb-4 flex items-center gap-2 rounded-lg bg-red-50 p-3 text-sm text-red-600">
+                <AlertCircle size={16} className="shrink-0" />
+                <span>{error}</span>
               </div>
             )}
             {success && (
-              <div className="mb-4 flex items-center gap-2 rounded-lg bg-green-50 p-3 text-sm text-green-600  ">
-                <CheckIcon className="size-4" />
-                {success}
+              <div className="mb-4 flex items-center gap-2 rounded-lg bg-green-50 p-3 text-sm text-green-600">
+                <CheckIcon className="size-4 shrink-0" />
+                <span>{success}</span>
               </div>
             )}
 
@@ -328,7 +328,7 @@ export default function AuthSectionThree() {
         </div>
 
         {/* Right Side - Marketing Testimonial and Mockup */}
-        <div className="relative hidden lg:flex min-h-[720px] flex-col overflow-hidden rounded-2xl bg-gradient-to-b from-[#1E3A5F] to-[#0d1e34] p-8 text-white sm:p-12 lg:min-h-0 lg:p-16 shadow-2xl">
+        <div className="relative hidden lg:flex min-h-screen flex-col justify-between overflow-hidden bg-gradient-to-b from-[#1E3A5F] to-[#0d1e34] p-10 text-white xl:p-16">
           {/* Background Shader */}
           <div className="absolute inset-0 z-0 pointer-events-none opacity-40">
             <FlutedGlass
@@ -354,72 +354,70 @@ export default function AuthSectionThree() {
             />
           </div>
 
-          <div className="relative z-10 h-full w-full">
-            <div className="max-w-[460px] lg:pt-12">
-              <motion.div
-                initial={{ opacity: 0, y: 12, filter: "blur(6px)" }}
-                whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-                viewport={{ once: true, margin: "-10%" }}
-                transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-                className="flex items-center gap-4"
-              >
-                <img
-                  src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&q=80"
-                  alt="Student"
-                  className="size-10 shrink-0 rounded-full border border-white/20 object-cover"
-                />
-                <div>
-                  <div className="font-semibold leading-tight text-white">
-                    Sarah L.
-                  </div>
-                  <div className="mt-0.5 text-xs text-white/60">
-                    Computer Science Student
-                  </div>
+          <div className="relative z-10 w-full max-w-[500px] pt-4 lg:pt-8">
+            <motion.div
+              initial={{ opacity: 0, y: 12, filter: "blur(6px)" }}
+              whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+              className="flex items-center gap-4"
+            >
+              <img
+                src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&q=80"
+                alt="Student"
+                className="size-11 shrink-0 rounded-full border border-white/25 object-cover shadow-sm"
+              />
+              <div>
+                <div className="font-semibold leading-tight text-white">
+                  Sarah L.
                 </div>
-              </motion.div>
-              <motion.blockquote
-                initial={{ opacity: 0, y: 18, filter: "blur(8px)" }}
-                whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-                viewport={{ once: true, margin: "-10%" }}
-                transition={{
-                  duration: 0.8,
-                  delay: 0.12,
-                  ease: [0.22, 1, 0.36, 1],
-                }}
-                className="mt-7 text-2xl font-light leading-tight tracking-[-0.035em] text-white/90 sm:text-3xl lg:text-[34px]"
-              >
-                “StudySpace consolidates everything I need. I stopped switching between Notion, ChatGPT, and Discord.”
-              </motion.blockquote>
-            </div>
+                <div className="mt-0.5 text-xs text-white/60">
+                  Computer Science Student
+                </div>
+              </div>
+            </motion.div>
+            <motion.blockquote
+              initial={{ opacity: 0, y: 18, filter: "blur(8px)" }}
+              whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+              viewport={{ once: true }}
+              transition={{
+                duration: 0.8,
+                delay: 0.12,
+                ease: [0.22, 1, 0.36, 1],
+              }}
+              className="mt-6 text-2xl font-light leading-snug tracking-tight text-white/95 lg:text-[28px] xl:text-[32px]"
+            >
+              “StudySpace consolidates everything I need. I stopped switching between Notion, ChatGPT, and Discord.”
+            </motion.blockquote>
+          </div>
 
-            <div className="mt-10 w-full translate-y-[24%] overflow-hidden rounded-2xl border border-white/15 bg-black/70 p-2 shadow-[0_30px_90px_rgba(0,0,0,0.5)] backdrop-blur-xl sm:translate-y-[22%] lg:absolute lg:left-[12%] lg:-bottom-28 lg:mt-0 lg:w-[105%] lg:max-w-none lg:origin-bottom-left lg:translate-y-0 lg:-rotate-3 xl:left-[14%] xl:-bottom-[150px] xl:w-[108%] 2xl:-bottom-[170px] 2xl:w-[112%]">
-              <motion.div
-                initial={{ opacity: 0, y: 72, filter: "blur(10px)" }}
-                whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-                viewport={{ once: true, margin: "-10%" }}
-                transition={{
-                  duration: 1,
-                  delay: 0.22,
-                  ease: [0.16, 1, 0.3, 1],
-                }}
-                className="overflow-hidden rounded-xl border border-white/10 bg-black"
-              >
-                <div className="flex items-center gap-1.5 border-b border-white/10 bg-black/40 px-4 py-3 select-none">
-                  <div className="size-2 rounded-full bg-white/35" />
-                  <div className="size-2 rounded-full bg-white/25" />
-                  <div className="size-2 rounded-full bg-white/15" />
-                  <span className="ml-4 text-[9px] font-mono tracking-wider text-white/40">
-                    studyspace.app/dashboard
-                  </span>
-                </div>
-                {/* Changed image to a darker aesthetic placeholder fitting the dark right side */}
-                <img
-                  src="https://images.unsplash.com/photo-1555099962-4199c345e5dd?q=80&w=2070&auto=format&fit=crop"
-                  alt="StudySpace Dashboard Mockup"
-                  className="h-auto w-full object-cover object-top opacity-95  h-64 lg:h-96"
-                />
-              </motion.div>
-            </div>
+          {/* Cleanly contained, responsive mockup with no negative overflow */}
+          <div className="relative z-10 mt-8 w-full max-w-[540px] overflow-hidden rounded-2xl border border-white/15 bg-black/60 p-2 shadow-2xl backdrop-blur-xl">
+            <motion.div
+              initial={{ opacity: 0, y: 30, filter: "blur(8px)" }}
+              whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+              viewport={{ once: true }}
+              transition={{
+                duration: 0.8,
+                delay: 0.15,
+                ease: [0.16, 1, 0.3, 1],
+              }}
+              className="overflow-hidden rounded-xl border border-white/10 bg-black"
+            >
+              <div className="flex items-center gap-1.5 border-b border-white/10 bg-black/50 px-4 py-3 select-none">
+                <div className="size-2 rounded-full bg-white/35" />
+                <div className="size-2 rounded-full bg-white/25" />
+                <div className="size-2 rounded-full bg-white/15" />
+                <span className="ml-4 text-[9px] font-mono tracking-wider text-white/40">
+                  studyspace.app/dashboard
+                </span>
+              </div>
+              <img
+                src="https://images.unsplash.com/photo-1555099962-4199c345e5dd?q=80&w=2070&auto=format&fit=crop"
+                alt="StudySpace Dashboard Mockup"
+                className="h-56 lg:h-64 xl:h-72 w-full object-cover object-top opacity-95"
+              />
+            </motion.div>
           </div>
         </div>
       </div>
@@ -438,10 +436,10 @@ function InputField({
 
   return (
     <div className="space-y-1.5 text-left w-full">
-      <label className="text-xs font-semibold text-black/60 ">
+      <label className="text-xs font-semibold text-black/70 block">
         {label}
       </label>
-      <div className="relative flex h-11 items-center rounded-lg border border-black/15 bg-white px-3.5   focus-within:border-black/50  transition-colors">
+      <div className="relative flex h-11 items-center rounded-lg border border-black/15 bg-white px-3.5 focus-within:border-black/50 transition-colors">
         <input
           type={
             type === "password" ? (showPassword ? "text" : "password") : type
@@ -449,13 +447,13 @@ function InputField({
           value={value}
           onChange={(e) => setValue(e.target.value)}
           placeholder={placeholder}
-          className="w-full bg-transparent text-sm text-black outline-none placeholder:text-black/30  "
+          className="w-full bg-transparent text-sm text-black outline-none placeholder:text-black/35 pr-8"
         />
         {type === "password" && (
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-3.5 text-black/40  hover:text-black  cursor-pointer"
+            className="absolute right-3.5 text-black/40 hover:text-black cursor-pointer transition-colors"
           >
             {showPassword ? (
               <EyeOff className="size-4" />

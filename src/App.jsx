@@ -13,9 +13,13 @@ import StudyTools from './components/StudyTools';
 import PdfTools from './components/PdfTools';
 import Calculator from './components/Calculator';
 import AcademicSearch from './components/AcademicSearch';
+import OnboardingModal from './components/OnboardingModal';
+import AttendanceTracker from './components/AttendanceTracker';
+
+import AlarmModal from './components/AlarmModal';
 
 function MainAppContent() {
-  const { session, authLoading, activeTab } = useApp();
+  const { session, authLoading, activeTab, isOnboardingRequired } = useApp();
 
   // Loading splash while Supabase resolves session
   if (authLoading) {
@@ -66,11 +70,17 @@ function MainAppContent() {
     return <AuthSectionThree />;
   }
 
+  // Google OAuth user not yet completed registration → Redirect to profile onboarding
+  if (isOnboardingRequired) {
+    return <OnboardingModal />;
+  }
+
   const renderActiveView = () => {
     switch (activeTab) {
       case 'dashboard':     return <Dashboard />;
       case 'ai-assistant':  return <AiAssistant />;
       case 'todo':          return <TaskPlanner />;
+      case 'attendance':    return <AttendanceTracker />;
       case 'community':     return <CommunityChannels />;
       case 'study-tools':   return <StudyTools />;
       case 'pdf-tools':     return <PdfTools />;
@@ -90,6 +100,7 @@ function MainAppContent() {
         </main>
       </div>
       <ProfileModal />
+      <AlarmModal />
     </div>
   );
 }

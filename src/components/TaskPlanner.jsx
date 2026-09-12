@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 
 export default function TaskPlanner() {
-  const { tasks, addTask, toggleTask, deleteTask } = useApp();
+  const { tasks, addTask, toggleTask, deleteTask, triggerAlarm } = useApp();
 
   const [activeCategory, setActiveCategory] = useState('all');
   const [activePriority, setActivePriority] = useState('all');
@@ -59,18 +59,40 @@ export default function TaskPlanner() {
     setIsAddModalOpen(false);
   };
 
+  const handleTestAlarm = () => {
+    triggerAlarm({
+      id: 'test-alarm-' + Date.now(),
+      title: 'Operating Systems Lab Submission Deadline',
+      category: 'Assignment',
+      due_time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      description: 'Submit PDF report and C code for Banker\'s Algorithm deadlock avoidance.'
+    });
+  };
+
   return (
     <div className="task-planner-page animate-fade-in">
       {/* Header Bar */}
       <div className="planner-header glass-card">
         <div className="header-info">
           <h2>Task & Deadline Planner</h2>
-          <p>Organize assignments, lab exams, group projects, and personal deadlines.</p>
+          <p>Organize assignments, lab exams, group projects, and set custom audio alarms.</p>
         </div>
 
-        <button className="gradient-button" onClick={() => setIsAddModalOpen(true)}>
-          <Plus size={18} /> Add New Task
-        </button>
+        <div style={{ display: 'flex', items: 'center', gap: '0.75rem' }}>
+          <button
+            type="button"
+            className="btn-secondary"
+            onClick={handleTestAlarm}
+            style={{ borderRadius: '12px', fontSize: '0.85rem', fontWeight: 600, border: '1px solid rgba(217, 119, 6, 0.3)', color: '#B45309', background: '#FFFBEB' }}
+            title="Trigger an instant alarm pop-up with sound chime"
+          >
+            🔔 Test Alarm
+          </button>
+
+          <button className="gradient-button" onClick={() => setIsAddModalOpen(true)} style={{ borderRadius: '12px' }}>
+            <Plus size={18} /> Add New Task
+          </button>
+        </div>
       </div>
 
       {/* Progress Bar & Summary */}
@@ -155,90 +177,291 @@ export default function TaskPlanner() {
         )}
       </div>
 
-      {/* Add Task Modal */}
+      {/* Add Task Modal — Spacious, Aesthetic & Modern */}
       {isAddModalOpen && (
         <div className="modal-overlay" onClick={() => setIsAddModalOpen(false)}>
-          <div className="modal-content glass-card animate-fade-in" onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>Create New Academic Task</h2>
-              <button className="close-btn" onClick={() => setIsAddModalOpen(false)}>✕</button>
+          <div
+            className="glass-card animate-fade-in"
+            style={{
+              width: '100%',
+              maxWidth: '620px',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              padding: '2rem',
+              borderRadius: '24px',
+              boxShadow: '0 25px 60px -15px rgba(30, 58, 95, 0.25)',
+              background: '#FFFFFF',
+              border: '1px solid rgba(30, 58, 95, 0.15)',
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '1.5rem', paddingBottom: '1rem', borderBottom: '1px solid rgba(30, 58, 95, 0.08)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+                <div style={{ width: 44, height: 44, borderRadius: '14px', background: 'rgba(30, 58, 95, 0.08)', color: 'var(--navy)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <CheckSquare size={22} />
+                </div>
+                <div>
+                  <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1A1A2E', fontFamily: 'Outfit, sans-serif', margin: 0 }}>
+                    Create New Academic Task
+                  </h2>
+                  <p style={{ fontSize: '0.8rem', color: '#6B7280', margin: '2px 0 0' }}>
+                    Track assignments, exam milestones, and study commitments
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsAddModalOpen(false)}
+                style={{ background: 'rgba(0,0,0,0.05)', border: 'none', borderRadius: '50%', width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#6B7280' }}
+              >
+                ✕
+              </button>
             </div>
 
-            <form onSubmit={handleCreateTask} className="task-form">
-              <div className="form-group">
-                <label>Task Title *</label>
+            <form onSubmit={handleCreateTask} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+              {/* Task Title */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#1A1A2E', marginBottom: 6 }}>
+                  Task Title *
+                </label>
                 <input
                   type="text"
-                  placeholder="e.g. Operating Systems Lab 4 Submission"
+                  placeholder="e.g. Operating Systems Lab 4 Deadlock Implementation"
                   value={newTask.title}
                   onChange={e => setNewTask({ ...newTask, title: e.target.value })}
                   required
+                  style={{
+                    width: '100%',
+                    height: '46px',
+                    padding: '0 1rem',
+                    borderRadius: '12px',
+                    border: '1px solid rgba(30, 58, 95, 0.2)',
+                    background: '#FAFAF7',
+                    fontSize: '0.92rem',
+                    color: '#1A1A2E',
+                    fontFamily: 'Inter, sans-serif',
+                    outline: 'none',
+                    boxSizing: 'border-box'
+                  }}
                 />
               </div>
 
-              <div className="form-group">
-                <label>Description / Notes</label>
+              {/* Category Selector (Chips) */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#1A1A2E', marginBottom: 8 }}>
+                  Category
+                </label>
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  {[
+                    { id: 'assignment', label: 'Assignment', icon: '📝' },
+                    { id: 'exam', label: 'Exam / Quiz', icon: '🎯' },
+                    { id: 'project', label: 'Project', icon: '🚀' },
+                    { id: 'college', label: 'College Event', icon: '🏛️' },
+                    { id: 'personal', label: 'Personal', icon: '⭐' },
+                  ].map(cat => {
+                    const isSelected = newTask.category === cat.id;
+                    return (
+                      <button
+                        key={cat.id}
+                        type="button"
+                        onClick={() => setNewTask({ ...newTask, category: cat.id })}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.4rem',
+                          padding: '0.5rem 0.85rem',
+                          borderRadius: '10px',
+                          border: isSelected ? '2px solid #1E3A5F' : '1px solid rgba(30, 58, 95, 0.15)',
+                          background: isSelected ? 'rgba(30, 58, 95, 0.08)' : '#FAFAF7',
+                          color: isSelected ? '#1E3A5F' : '#374151',
+                          fontWeight: isSelected ? 700 : 500,
+                          fontSize: '0.8rem',
+                          cursor: 'pointer',
+                          transition: 'all 0.15s ease'
+                        }}
+                      >
+                        <span>{cat.icon}</span>
+                        <span>{cat.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Priority Cards */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#1A1A2E', marginBottom: 8 }}>
+                  Urgency & Priority
+                </label>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem' }}>
+                  {[
+                    { id: 'low', label: 'Low', badge: 'Normal Pace', color: '#059669', bg: '#ECFDF5', border: '#A7F3D0' },
+                    { id: 'medium', label: 'Medium', badge: 'Standard', color: '#D97706', bg: '#FFFBEB', border: '#FDE68A' },
+                    { id: 'high', label: 'High Priority', badge: 'Urgent Deadline', color: '#DC2626', bg: '#FEF2F2', border: '#FECACA' },
+                  ].map(p => {
+                    const isSelected = newTask.priority === p.id;
+                    return (
+                      <div
+                        key={p.id}
+                        onClick={() => setNewTask({ ...newTask, priority: p.id })}
+                        style={{
+                          padding: '0.75rem',
+                          borderRadius: '12px',
+                          border: isSelected ? `2px solid ${p.color}` : '1px solid rgba(0,0,0,0.1)',
+                          background: isSelected ? p.bg : '#FAFAF7',
+                          cursor: 'pointer',
+                          transition: 'all 0.15s ease',
+                          textAlign: 'center'
+                        }}
+                      >
+                        <div style={{ fontSize: '0.82rem', fontWeight: 700, color: p.color }}>{p.label}</div>
+                        <div style={{ fontSize: '0.7rem', color: '#6B7280', marginTop: 2 }}>{p.badge}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Date & Time Row with Presets */}
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                  <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1A1A2E' }}>
+                    Due Date & Time
+                  </label>
+                  {/* Presets */}
+                  <div style={{ display: 'flex', gap: '0.35rem' }}>
+                    {[
+                      { label: 'Today', days: 0 },
+                      { label: 'Tomorrow', days: 1 },
+                      { label: '+3 Days', days: 3 },
+                      { label: 'Next Week', days: 7 },
+                    ].map((preset, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => {
+                          const targetDate = new Date(Date.now() + preset.days * 86400000);
+                          setNewTask(prev => ({ ...prev, due_date: targetDate.toISOString().split('T')[0] }));
+                        }}
+                        style={{
+                          fontSize: '0.68rem',
+                          padding: '0.2rem 0.5rem',
+                          borderRadius: '6px',
+                          border: '1px solid rgba(30, 58, 95, 0.15)',
+                          background: '#fff',
+                          color: '#1E3A5F',
+                          cursor: 'pointer',
+                          fontWeight: 600
+                        }}
+                      >
+                        {preset.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                  <div style={{ position: 'relative' }}>
+                    <input
+                      type="date"
+                      value={newTask.due_date}
+                      onChange={e => setNewTask({ ...newTask, due_date: e.target.value })}
+                      required
+                      style={{
+                        width: '100%',
+                        height: '44px',
+                        padding: '0 0.85rem',
+                        borderRadius: '10px',
+                        border: '1px solid rgba(30, 58, 95, 0.2)',
+                        background: '#FAFAF7',
+                        fontSize: '0.85rem',
+                        color: '#1A1A2E',
+                        outline: 'none',
+                        boxSizing: 'border-box'
+                      }}
+                    />
+                  </div>
+
+                  <div style={{ position: 'relative' }}>
+                    <input
+                      type="time"
+                      value={newTask.due_time}
+                      onChange={e => setNewTask({ ...newTask, due_time: e.target.value })}
+                      style={{
+                        width: '100%',
+                        height: '44px',
+                        padding: '0 0.85rem',
+                        borderRadius: '10px',
+                        border: '1px solid rgba(30, 58, 95, 0.2)',
+                        background: '#FAFAF7',
+                        fontSize: '0.85rem',
+                        color: '#1A1A2E',
+                        outline: 'none',
+                        boxSizing: 'border-box'
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Description / Notes */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#1A1A2E', marginBottom: 6 }}>
+                  Notes & Details <span style={{ fontWeight: 400, color: '#6B7280' }}>(Optional)</span>
+                </label>
                 <textarea
-                  placeholder="Optional details, subtasks, or submission links..."
+                  placeholder="Key deliverables, sub-steps, reference links, or professor guidelines..."
                   value={newTask.description}
                   onChange={e => setNewTask({ ...newTask, description: e.target.value })}
                   rows={3}
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem 1rem',
+                    borderRadius: '12px',
+                    border: '1px solid rgba(30, 58, 95, 0.2)',
+                    background: '#FAFAF7',
+                    fontSize: '0.88rem',
+                    color: '#1A1A2E',
+                    fontFamily: 'Inter, sans-serif',
+                    outline: 'none',
+                    resize: 'vertical',
+                    boxSizing: 'border-box'
+                  }}
                 />
               </div>
 
-              <div className="form-grid">
-                <div className="form-group">
-                  <label>Category</label>
-                  <select
-                    value={newTask.category}
-                    onChange={e => setNewTask({ ...newTask, category: e.target.value })}
-                  >
-                    <option value="assignment">Assignment</option>
-                    <option value="exam">Exam</option>
-                    <option value="project">Project</option>
-                    <option value="college">College Event</option>
-                    <option value="personal">Personal</option>
-                  </select>
-                </div>
-
-                <div className="form-group">
-                  <label>Priority</label>
-                  <select
-                    value={newTask.priority}
-                    onChange={e => setNewTask({ ...newTask, priority: e.target.value })}
-                  >
-                    <option value="low">Low Priority</option>
-                    <option value="medium">Medium Priority</option>
-                    <option value="high">High Priority</option>
-                  </select>
-                </div>
-
-                <div className="form-group">
-                  <label>Due Date</label>
-                  <input
-                    type="date"
-                    value={newTask.due_date}
-                    onChange={e => setNewTask({ ...newTask, due_date: e.target.value })}
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Due Time</label>
-                  <input
-                    type="time"
-                    value={newTask.due_time}
-                    onChange={e => setNewTask({ ...newTask, due_time: e.target.value })}
-                  />
-                </div>
-              </div>
-
-              <div className="modal-actions">
-                <button type="button" className="cancel-btn" onClick={() => setIsAddModalOpen(false)}>
+              {/* Modal Actions */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem', paddingTop: '1rem', borderTop: '1px solid rgba(30, 58, 95, 0.08)' }}>
+                <button
+                  type="button"
+                  onClick={() => setIsAddModalOpen(false)}
+                  style={{
+                    padding: '0.65rem 1.25rem',
+                    borderRadius: '10px',
+                    border: '1px solid rgba(30, 58, 95, 0.2)',
+                    background: 'transparent',
+                    color: '#374151',
+                    fontSize: '0.85rem',
+                    fontWeight: 600,
+                    cursor: 'pointer'
+                  }}
+                >
                   Cancel
                 </button>
-                <button type="submit" className="gradient-button">
-                  Save Task
+                <button
+                  type="submit"
+                  className="gradient-button"
+                  style={{
+                    padding: '0.65rem 1.5rem',
+                    borderRadius: '10px',
+                    fontSize: '0.85rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 12px rgba(30, 58, 95, 0.2)'
+                  }}
+                >
+                  Create Task
                 </button>
               </div>
             </form>

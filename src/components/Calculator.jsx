@@ -50,8 +50,10 @@ export default function Calculator() {
         });
       }
 
-      // eslint-disable-next-line no-eval
-      const evalResult = eval(sanitized);
+      // Safe evaluation using Function
+      // eslint-disable-next-line no-new-func
+      const evalFn = new Function(`"use strict"; return (${sanitized});`);
+      const evalResult = evalFn();
       const formatted = Number.isInteger(evalResult) ? evalResult.toString() : Number(evalResult).toFixed(4);
 
       setResult(formatted);
