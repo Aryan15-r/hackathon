@@ -9,14 +9,14 @@ const termsText = (
     By creating an account, you agree to our{" "}
     <a
       href="#"
-      className="font-medium text-black/55 underline underline-offset-2 dark:text-white/55"
+      className="font-medium text-black/55 underline underline-offset-2 "
     >
       Terms of Service
     </a>{" "}
     and{" "}
     <a
       href="#"
-      className="font-medium text-black/55 underline underline-offset-2 dark:text-white/55"
+      className="font-medium text-black/55 underline underline-offset-2 "
     >
       Privacy Policy
     </a>
@@ -136,19 +136,19 @@ export default function AuthSectionThree() {
   };
 
   return (
-    <section className="min-h-screen bg-white p-3 text-black antialiased [font-synthesis:none] dark:bg-[#050505] dark:text-white">
-      <div className="grid min-h-[calc(100vh-1.5rem)] gap-6 lg:grid-cols-[0.94fr_1.06fr]">
+    <section className="min-h-screen w-full bg-[#FDF6EC] p-3 md:p-6 text-[#1A1A2E] antialiased [font-synthesis:none]">
+      <div className="grid min-h-[calc(100vh-3rem)] w-full max-w-[1400px] mx-auto gap-6 lg:grid-cols-2">
         {/* Left Side - Auth Form */}
-        <div className="flex min-h-[760px] items-center justify-center rounded-md border border-black/10 bg-white px-6 py-12 dark:border-white/5 dark:bg-[#0a0a0c] lg:min-h-0 lg:px-14 lg:py-20 xl:px-20">
-          <div className="mx-auto w-full max-w-[460px]">
+        <div className="flex w-full flex-col justify-center rounded-2xl border border-black/5 bg-white px-6 py-12 shadow-xl shadow-black/[0.03] lg:px-14 lg:py-20 xl:px-20">
+          <div className="mx-auto w-full max-w-[420px]">
             <div>
-              <h1 className="text-3xl font-medium tracking-tight sm:text-4xl text-black dark:text-white">
+              <h1 className="text-3xl font-medium tracking-tight sm:text-4xl text-black ">
                 {view === "signup" && "Create an account"}
                 {view === "signin" && "Welcome back"}
                 {view === "forgot-password" && "Reset Password"}
                 {view === "otp" && "Verify Email"}
               </h1>
-              <p className="mt-2 text-sm text-black/60 dark:text-white/60">
+              <p className="mt-2 text-sm text-black/60 ">
                 {view === "signup" && "Join StudySpace to organize your academic life."}
                 {view === "signin" && "Sign in to access your dashboard."}
                 {view === "forgot-password" && "Enter your email and we'll send you a link to reset your password."}
@@ -164,7 +164,7 @@ export default function AuthSectionThree() {
                     type="button"
                     onClick={handleGoogleSignIn}
                     disabled={googleLoading || loading}
-                    className="flex h-11 w-full min-w-0 items-center justify-center gap-2 rounded-lg border border-black/15 bg-white px-4 text-sm font-medium text-black transition-colors hover:bg-black/[0.02] dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10 disabled:opacity-50"
+                    className="flex h-11 w-full min-w-0 items-center justify-center gap-2 rounded-lg border border-black/15 bg-white px-4 text-sm font-medium text-black transition-colors hover:bg-black/[0.02]     disabled:opacity-50"
                   >
                     {googleLoading ? <Loader2 className="animate-spin size-4" /> : <GoogleIcon />}
                     <span className="whitespace-nowrap">
@@ -175,30 +175,30 @@ export default function AuthSectionThree() {
                   <button
                     type="button"
                     disabled
-                    className="flex h-11 w-full min-w-0 items-center justify-center gap-2 rounded-lg border border-black/15 bg-white px-4 text-sm font-medium text-black transition-colors hover:bg-black/[0.02] dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10 opacity-50 cursor-not-allowed"
+                    className="flex h-11 w-full min-w-0 items-center justify-center gap-2 rounded-lg border border-black/15 bg-white px-4 text-sm font-medium text-black transition-colors hover:bg-black/[0.02]     opacity-50 cursor-not-allowed"
                   >
                     <AppleIcon />
                     <span className="whitespace-nowrap">Sign in with Apple</span>
                   </button>
                 </div>
 
-                <div className="my-6 flex items-center gap-4 text-xs font-medium text-black/40 dark:text-white/30">
-                  <div className="h-px flex-1 bg-black/10 dark:bg-white/10" />
+                <div className="my-6 flex items-center gap-4 text-xs font-medium text-black/40 ">
+                  <div className="h-px flex-1 bg-black/10 " />
                   or
-                  <div className="h-px flex-1 bg-black/10 dark:bg-white/10" />
+                  <div className="h-px flex-1 bg-black/10 " />
                 </div>
               </>
             )}
 
             {/* Error / Success Messages */}
             {error && (
-              <div className="mb-4 flex items-center gap-2 rounded-lg bg-red-50 p-3 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400">
+              <div className="mb-4 flex items-center gap-2 rounded-lg bg-red-50 p-3 text-sm text-red-600  ">
                 <AlertCircle size={16} />
                 {error}
               </div>
             )}
             {success && (
-              <div className="mb-4 flex items-center gap-2 rounded-lg bg-green-50 p-3 text-sm text-green-600 dark:bg-green-900/20 dark:text-green-400">
+              <div className="mb-4 flex items-center gap-2 rounded-lg bg-green-50 p-3 text-sm text-green-600  ">
                 <CheckIcon className="size-4" />
                 {success}
               </div>
@@ -253,7 +253,7 @@ export default function AuthSectionThree() {
                       setView("forgot-password");
                       clearMessages();
                     }}
-                    className="text-xs font-medium text-black/60 hover:text-black dark:text-white/60 dark:hover:text-white"
+                    className="text-xs font-medium text-black/60 hover:text-black  "
                   >
                     Forgot password?
                   </button>
@@ -261,7 +261,7 @@ export default function AuthSectionThree() {
               )}
 
               {view === "signup" && (
-                <div className="space-y-3 pt-2 text-xs leading-5 text-black/45 dark:text-white/40 sm:text-[13px]">
+                <div className="space-y-3 pt-2 text-xs leading-5 text-black/45  sm:text-[13px]">
                   <CheckboxLine>
                     I don't want to receive emails about StudySpace feature
                     updates and best practices.
@@ -273,7 +273,7 @@ export default function AuthSectionThree() {
               <button
                 type="submit"
                 disabled={loading}
-                className="mt-8 flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-black/40 bg-black text-sm font-medium text-white transition-colors hover:bg-black/85 dark:border-white/40 dark:bg-white dark:text-black dark:hover:bg-white/85 disabled:opacity-70"
+                className="mt-8 flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-black/40 bg-black text-sm font-medium text-white transition-colors hover:bg-black/85     disabled:opacity-70"
               >
                 {loading && <Loader2 className="animate-spin size-4" />}
                 {view === "signup" && "Submit"}
@@ -283,7 +283,7 @@ export default function AuthSectionThree() {
               </button>
             </form>
 
-            <div className="mt-8 text-center text-sm text-black/60 dark:text-white/60">
+            <div className="mt-8 text-center text-sm text-black/60 ">
               {view === "signup" && (
                 <>
                   Already have an account?{" "}
@@ -292,7 +292,7 @@ export default function AuthSectionThree() {
                       setView("signin");
                       clearMessages();
                     }}
-                    className="font-medium text-black dark:text-white hover:underline"
+                    className="font-medium text-black  hover:underline"
                   >
                     Sign In
                   </button>
@@ -306,7 +306,7 @@ export default function AuthSectionThree() {
                       setView("signup");
                       clearMessages();
                     }}
-                    className="font-medium text-black dark:text-white hover:underline"
+                    className="font-medium text-black  hover:underline"
                   >
                     Sign Up
                   </button>
@@ -318,7 +318,7 @@ export default function AuthSectionThree() {
                     setView("signin");
                     clearMessages();
                   }}
-                  className="font-medium text-black dark:text-white hover:underline"
+                  className="font-medium text-black  hover:underline"
                 >
                   Back to Sign In
                 </button>
@@ -328,9 +328,9 @@ export default function AuthSectionThree() {
         </div>
 
         {/* Right Side - Marketing Testimonial and Mockup */}
-        <div className="relative hidden lg:flex min-h-[720px] flex-col overflow-hidden rounded-md bg-gradient-to-b from-black to-white p-8 text-white dark:to-[#050505] sm:p-12 lg:min-h-0 lg:p-16">
+        <div className="relative hidden lg:flex min-h-[720px] flex-col overflow-hidden rounded-2xl bg-gradient-to-b from-[#1E3A5F] to-[#0d1e34] p-8 text-white sm:p-12 lg:min-h-0 lg:p-16 shadow-2xl">
           {/* Background Shader */}
-          <div className="absolute inset-0 z-0 pointer-events-none">
+          <div className="absolute inset-0 z-0 pointer-events-none opacity-40">
             <FlutedGlass
               size={0.89}
               shape="lines"
@@ -347,10 +347,10 @@ export default function AuthSectionThree() {
               shadows={0.2}
               grainMixer={0.1}
               grainOverlay={0.1}
-              colorBack="#00000000"
-              colorHighlight="#FFFFFF"
-              colorShadow="#000000"
-              className="w-full h-full bg-transparent"
+              colorBack="#1E3A5F"
+              colorHighlight="#ffffff"
+              colorShadow="#0a1220"
+              className="w-full h-full"
             />
           </div>
 
@@ -416,7 +416,7 @@ export default function AuthSectionThree() {
                 <img
                   src="https://images.unsplash.com/photo-1555099962-4199c345e5dd?q=80&w=2070&auto=format&fit=crop"
                   alt="StudySpace Dashboard Mockup"
-                  className="h-auto w-full object-cover object-top opacity-95 dark:[filter:none] h-64 lg:h-96"
+                  className="h-auto w-full object-cover object-top opacity-95  h-64 lg:h-96"
                 />
               </motion.div>
             </div>
@@ -438,10 +438,10 @@ function InputField({
 
   return (
     <div className="space-y-1.5 text-left w-full">
-      <label className="text-xs font-semibold text-black/60 dark:text-white/60">
+      <label className="text-xs font-semibold text-black/60 ">
         {label}
       </label>
-      <div className="relative flex h-11 items-center rounded-lg border border-black/15 bg-white px-3.5 dark:border-white/10 dark:bg-white/5 focus-within:border-black/50 dark:focus-within:border-white/50 transition-colors">
+      <div className="relative flex h-11 items-center rounded-lg border border-black/15 bg-white px-3.5   focus-within:border-black/50  transition-colors">
         <input
           type={
             type === "password" ? (showPassword ? "text" : "password") : type
@@ -449,13 +449,13 @@ function InputField({
           value={value}
           onChange={(e) => setValue(e.target.value)}
           placeholder={placeholder}
-          className="w-full bg-transparent text-sm text-black outline-none placeholder:text-black/30 dark:text-white dark:placeholder:text-white/30"
+          className="w-full bg-transparent text-sm text-black outline-none placeholder:text-black/30  "
         />
         {type === "password" && (
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-3.5 text-black/40 dark:text-white/40 hover:text-black dark:hover:text-white cursor-pointer"
+            className="absolute right-3.5 text-black/40  hover:text-black  cursor-pointer"
           >
             {showPassword ? (
               <EyeOff className="size-4" />
@@ -475,11 +475,11 @@ function CheckboxLine({ children }) {
       <span className="relative mt-1 size-3.5 shrink-0">
         <input
           type="checkbox"
-          className="peer size-full cursor-pointer appearance-none rounded-[3px] border border-black/25 bg-white checked:border-black checked:bg-black dark:border-white/30 dark:bg-white/5 dark:checked:border-white dark:checked:bg-white"
+          className="peer size-full cursor-pointer appearance-none rounded-[3px] border border-black/25 bg-white checked:border-black checked:bg-black    "
         />
         <svg
           viewBox="0 0 12 12"
-          className="pointer-events-none absolute inset-0 hidden size-full p-0.5 text-white peer-checked:block dark:text-black"
+          className="pointer-events-none absolute inset-0 hidden size-full p-0.5 text-white peer-checked:block "
           fill="none"
           aria-hidden="true"
         >
