@@ -240,10 +240,13 @@ app.post('/api/ai/chat', async (req, res) => {
             });
           }
         }
+        console.error(`[AI cascade] ${model} responded ${response.status}: ${await response.text().catch(() => '')}`);
       } catch (err) {
-        // Continue to next cascade model
+        console.error(`[AI cascade] ${model} threw: ${err.message}`);
       }
     }
+  } else {
+    console.error('[AI cascade] No valid Gemini API key found (checked GEMINI_API_KEY env var and x-gemini-api-key header).');
   }
 
   // Autonomous high-yield academic response engine (zero failure, zero downtime)
@@ -251,7 +254,7 @@ app.post('/api/ai/chat', async (req, res) => {
   return res.json({
     text: cleanMathFormulas(answer),
     modelUsed: 'StudySpace AI Tutor',
-    isFallback: false
+    isFallback: true
   });
 });
 

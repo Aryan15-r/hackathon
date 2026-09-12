@@ -352,7 +352,7 @@ export default function AiAssistant() {
       if (response.ok) {
         const data = await response.json();
         if (data.text) {
-          setAiHistory(prev => [...prev, { role: 'model', text: data.text, modelUsed: data.modelUsed || 'StudySpace AI' }]);
+          setAiHistory(prev => [...prev, { role: 'model', text: data.text, modelUsed: data.modelUsed || 'StudySpace AI', isFallback: Boolean(data.isFallback) }]);
           if (data.modelUsed) setAiModelUsed(data.modelUsed);
           return;
         }
@@ -360,12 +360,12 @@ export default function AiAssistant() {
       
       // If backend responded without text or error, seamlessly fall back to client-side Academic Tutor
       const smartResponse = cleanMathFormulas(generateAcademicResponse(textToSend));
-      setAiHistory(prev => [...prev, { role: 'model', text: smartResponse, modelUsed: 'StudySpace Academic Engine' }]);
+      setAiHistory(prev => [...prev, { role: 'model', text: smartResponse, modelUsed: 'StudySpace Academic Engine', isFallback: true }]);
       setAiModelUsed('StudySpace Academic Engine');
     } catch (err) {
       // Backend offline or network blip: instant intelligent response, zero failure!
       const smartResponse = cleanMathFormulas(generateAcademicResponse(textToSend));
-      setAiHistory(prev => [...prev, { role: 'model', text: smartResponse, modelUsed: 'StudySpace Academic Engine' }]);
+      setAiHistory(prev => [...prev, { role: 'model', text: smartResponse, modelUsed: 'StudySpace Academic Engine', isFallback: true }]);
       setAiModelUsed('StudySpace Academic Engine');
     } finally {
       setLoading(false);
@@ -439,6 +439,7 @@ export default function AiAssistant() {
                 ) : (
                   <span className="author-name model">
                     <Sparkles size={14} /> StudySpace AI {msg.modelUsed && <small>({msg.modelUsed})</small>}
+                    {msg.isFallback && <small className="fallback-badge" title="Live AI was unavailable; this is an offline template response.">Offline mode</small>}
                   </span>
                 )}
               </div>
@@ -623,6 +624,17 @@ export default function AiAssistant() {
         .author-name.user { color: #a5b4fc; }
         .author-name.model { color: var(--accent-cyan); }
         .author-name.model small { font-weight: 400; color: var(--text-muted); }
+
+        .fallback-badge {
+          font-size: 0.65rem;
+          font-weight: 600;
+          color: var(--accent-amber, #D97706);
+          background: rgba(217, 119, 6, 0.12);
+          border: 1px solid rgba(217, 119, 6, 0.3);
+          border-radius: 999px;
+          padding: 0.1rem 0.5rem;
+          margin-left: 0.25rem;
+        }
 
         .copy-btn {
           background: transparent;
