@@ -1,6 +1,6 @@
 import React from 'react';
 import { AppProvider, useApp } from './context/AppContext';
-import AuthPage from './components/AuthPage';
+import AuthSectionThree from './components/ui/AuthSectionThree';
 import Sidebar from './components/Sidebar';
 import Navbar from './components/Navbar';
 import ProfileModal from './components/ProfileModal';
@@ -63,7 +63,7 @@ function MainAppContent() {
 
   // Not logged in → Auth page
   if (!session) {
-    return <AuthPage />;
+    return <AuthSectionThree />;
   }
 
   const renderActiveView = () => {
