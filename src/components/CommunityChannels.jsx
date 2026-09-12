@@ -191,22 +191,6 @@ export default function CommunityChannels() {
       {/* 1. DISCORD SERVER RAIL (Far Left) */}
       <div className="w-[72px] bg-[#1E1F22] flex flex-col items-center py-3 gap-3 border-r border-white/5 shrink-0 z-20 select-none">
         
-        {/* Home Server Icon */}
-        <div
-          onClick={() => handleSelectHub(activeHubList[0])}
-          className="relative group cursor-pointer"
-          title="StudySpace Home Hub"
-        >
-          <div className={`w-12 h-12 rounded-2xl transition-all duration-200 flex items-center justify-center text-xl bg-[#313338] text-[#5865F2] hover:bg-[#5865F2] hover:text-white hover:rounded-xl shadow-md ${activeComm.id === activeHubList[0].id ? '!bg-[#5865F2] !text-white !rounded-xl' : ''}`}>
-            🎓
-          </div>
-          {activeComm.id === activeHubList[0].id && (
-            <div className="absolute left-[-12px] top-3 w-2 h-6 bg-white rounded-r-full" />
-          )}
-        </div>
-
-        <div className="w-8 h-[2px] bg-white/10 rounded-full my-0.5" />
-
         {/* Server / Hub Icon List */}
         <div className="flex-1 w-full flex flex-col items-center gap-2.5 overflow-y-auto no-scrollbar">
           {activeHubList.map(hub => {
