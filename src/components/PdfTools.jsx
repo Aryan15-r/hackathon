@@ -21,7 +21,8 @@ import {
   MessageSquare,
   Code,
   BookOpen,
-  X
+  X,
+  FileImage
 } from 'lucide-react';
 
 export default function PdfTools() {
