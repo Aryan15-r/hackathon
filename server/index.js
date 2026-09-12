@@ -83,8 +83,7 @@ app.post('/api/ai/chat', async (req, res) => {
     return res.status(400).json({ error: 'Prompt string is required.' });
   }
 
-  const rawKey = process.env.GEMINI_API_KEY || req.headers['x-gemini-api-key'];
-  const isValidGeminiKey = Boolean(rawKey && typeof rawKey === 'string' && rawKey.startsWith('AIza') && rawKey.length > 25);
+  const isValidGeminiKey = Boolean(rawKey && typeof rawKey === 'string' && rawKey.length > 10);
 
   // If a valid Google AI Studio API key exists, attempt live cascade
   if (isValidGeminiKey) {

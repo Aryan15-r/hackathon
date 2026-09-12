@@ -45,8 +45,43 @@ export default function PdfTools() {
   const [isFullscreenPpt, setIsFullscreenPpt] = useState(false);
 
   // --- CONVERSION STUDIO STATE ---
+  const [activeConverterSubTab, setActiveConverterSubTab] = useState('img2pdf'); // 'img2pdf' | 'txt2pdf' | 'html2pdf' | 'textExport'
   const [imageFiles, setImageFiles] = useState([]);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [rawTextToConvert, setRawTextToConvert] = useState('');
+  const [pdfDocumentTitle, setPdfDocumentTitle] = useState('My_Study_Notes');
+  const [htmlCodeInput, setHtmlCodeInput] = useState('<h1 style="color: #1E3A5F;">Study Notes</h1>\n<p>Key formula: <b>E = mc<sup>2</sup></b></p>');
+
+  const handleConvertTextToPdf = () => {
+    if (!rawTextToConvert.trim()) return;
+    const doc = new jsPDF();
+    const splitText = doc.splitTextToSize(rawTextToConvert, 180);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(12);
+    doc.text(splitText, 15, 20);
+    doc.save(`${pdfDocumentTitle || 'Document'}.pdf`);
+  };
+
+  const handleExportAsTxt = () => {
+    if (!rawTextToConvert.trim()) return;
+    const blob = new Blob([rawTextToConvert], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${pdfDocumentTitle || 'Document'}.txt`;
+    link.click();
+  };
+
+  const handleExportAsJson = () => {
+    if (!rawTextToConvert.trim()) return;
+    const jsonContent = JSON.stringify({ title: pdfDocumentTitle, text: rawTextToConvert, timestamp: new Date().toISOString() }, null, 2);
+    const blob = new Blob([jsonContent], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${pdfDocumentTitle || 'Document'}.json`;
+    link.click();
+  };
 
   const handleImageUpload = (e) => {
     const files = Array.from(e.target.files);
@@ -599,49 +634,180 @@ export default function PdfTools() {
       {/* ========================================================================= */}
       {activeStudioTab === 'convert' && (
         <div className="bg-white dark:bg-[#1A1C23] border border-black/10 dark:border-white/10 rounded-2xl p-6 shadow-sm space-y-6">
-          <div className="flex items-center gap-2 text-sm font-bold text-[#1E3A5F] dark:text-emerald-400">
-            <Layers size={18} />
-            <span>Image to PDF Converter</span>
-          </div>
           
-          <div className="border border-dashed border-[#1E3A5F]/30 dark:border-white/20 rounded-2xl p-8 text-center space-y-4 hover:border-[#1E3A5F] transition-colors">
-            <div className="w-16 h-16 rounded-2xl bg-[#1E3A5F]/10 dark:bg-white/10 flex items-center justify-center text-[#1E3A5F] dark:text-emerald-400 mx-auto">
-              <UploadCloud size={32} />
-            </div>
-            <div>
-              <h3 className="text-base font-bold text-[#1A1A2E] dark:text-white">Upload Images (JPG, PNG)</h3>
-              <p className="text-xs text-black/60 dark:text-white/60 mt-1">Select multiple images to combine into a single PDF.</p>
-            </div>
-            
-            <label className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#1E3A5F] hover:bg-[#152b46] text-white text-xs font-bold shadow-md cursor-pointer transition-all">
-              <span>Select Images</span>
-              <input type="file" accept="image/*" multiple onChange={handleImageUpload} hidden />
-            </label>
+          {/* CONVERTER SUB-TABS */}
+          <div className="flex flex-wrap items-center gap-2 border-b border-black/10 dark:border-white/10 pb-4">
+            <button
+              onClick={() => setActiveConverterSubTab('img2pdf')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${activeConverterSubTab === 'img2pdf' ? 'bg-[#1E3A5F] text-white shadow-md' : 'bg-black/5 dark:bg-white/5 text-gray-400 hover:text-white'}`}
+            >
+              <FileImage size={15} />
+              <span>Image to PDF</span>
+            </button>
+
+            <button
+              onClick={() => setActiveConverterSubTab('txt2pdf')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${activeConverterSubTab === 'txt2pdf' ? 'bg-[#1E3A5F] text-white shadow-md' : 'bg-black/5 dark:bg-white/5 text-gray-400 hover:text-white'}`}
+            >
+              <FileText size={15} />
+              <span>Text to PDF</span>
+            </button>
+
+            <button
+              onClick={() => setActiveConverterSubTab('textExport')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${activeConverterSubTab === 'textExport' ? 'bg-[#1E3A5F] text-white shadow-md' : 'bg-black/5 dark:bg-white/5 text-gray-400 hover:text-white'}`}
+            >
+              <Download size={15} />
+              <span>TXT / JSON Exporter</span>
+            </button>
           </div>
 
-          {imageFiles.length > 0 && (
-            <div className="space-y-4">
-              <div className="flex flex-wrap gap-3">
-                {imageFiles.map((file, idx) => (
-                  <div key={idx} className="relative w-20 h-20 rounded-xl overflow-hidden border border-black/10 dark:border-white/10 group">
-                    <img src={URL.createObjectURL(file)} alt="upload" className="w-full h-full object-cover" />
-                    <button onClick={() => setImageFiles(prev => prev.filter((_, i) => i !== idx))} className="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center text-[10px] cursor-pointer shadow-md opacity-0 group-hover:opacity-100 transition-opacity">
-                      <X size={12} />
-                    </button>
-                  </div>
-                ))}
+          {/* 1. IMAGE TO PDF CONVERTER */}
+          {activeConverterSubTab === 'img2pdf' && (
+            <div className="space-y-6">
+              <div className="flex items-center gap-2 text-sm font-bold text-[#1E3A5F] dark:text-emerald-400">
+                <FileImage size={18} />
+                <span>Image to PDF Converter</span>
+              </div>
+              
+              <div className="border border-dashed border-[#1E3A5F]/30 dark:border-white/20 rounded-2xl p-8 text-center space-y-4 hover:border-[#1E3A5F] transition-colors">
+                <div className="w-16 h-16 rounded-2xl bg-[#1E3A5F]/10 dark:bg-white/10 flex items-center justify-center text-[#1E3A5F] dark:text-emerald-400 mx-auto">
+                  <UploadCloud size={32} />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-[#1A1A2E] dark:text-white">Upload Images (JPG, PNG)</h3>
+                  <p className="text-xs text-black/60 dark:text-white/60 mt-1">Select multiple images to combine into a single high-quality PDF.</p>
+                </div>
+                
+                <label className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#1E3A5F] hover:bg-[#152b46] text-white text-xs font-bold shadow-md cursor-pointer transition-all">
+                  <span>Select Images</span>
+                  <input type="file" accept="image/*" multiple onChange={handleImageUpload} hidden />
+                </label>
               </div>
 
-              <button
-                onClick={handleGeneratePdfFromImages}
-                disabled={isGeneratingPdf}
-                className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md cursor-pointer disabled:opacity-50"
-              >
-                {isGeneratingPdf ? <RefreshCw size={16} className="animate-spin" /> : <Download size={16} />}
-                <span>{isGeneratingPdf ? 'Generating PDF...' : 'Download as PDF'}</span>
-              </button>
+              {imageFiles.length > 0 && (
+                <div className="space-y-4">
+                  <div className="flex flex-wrap gap-3">
+                    {imageFiles.map((file, idx) => (
+                      <div key={idx} className="relative w-20 h-20 rounded-xl overflow-hidden border border-black/10 dark:border-white/10 group">
+                        <img src={URL.createObjectURL(file)} alt="upload" className="w-full h-full object-cover" />
+                        <button onClick={() => setImageFiles(prev => prev.filter((_, i) => i !== idx))} className="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center text-[10px] cursor-pointer shadow-md opacity-0 group-hover:opacity-100 transition-opacity">
+                          <X size={12} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+
+                  <button
+                    onClick={handleGeneratePdfFromImages}
+                    disabled={isGeneratingPdf}
+                    className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md cursor-pointer disabled:opacity-50"
+                  >
+                    {isGeneratingPdf ? <RefreshCw size={16} className="animate-spin" /> : <Download size={16} />}
+                    <span>{isGeneratingPdf ? 'Generating PDF...' : 'Download as PDF'}</span>
+                  </button>
+                </div>
+              )}
             </div>
           )}
+
+          {/* 2. TEXT TO PDF CONVERTER */}
+          {activeConverterSubTab === 'txt2pdf' && (
+            <div className="space-y-6">
+              <div className="flex items-center gap-2 text-sm font-bold text-[#1E3A5F] dark:text-emerald-400">
+                <FileText size={18} />
+                <span>Text & Notes to PDF Converter</span>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-400 mb-1">Document Title</label>
+                  <input
+                    type="text"
+                    value={pdfDocumentTitle}
+                    onChange={(e) => setPdfDocumentTitle(e.target.value)}
+                    placeholder="e.g. Operating_Systems_Chapter_1"
+                    className="w-full px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-xs font-medium text-black dark:text-white focus:outline-none focus:border-[#1E3A5F]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-400 mb-1">Text Content</label>
+                  <textarea
+                    rows={8}
+                    value={rawTextToConvert}
+                    onChange={(e) => setRawTextToConvert(e.target.value)}
+                    placeholder="Paste lecture notes, study summaries, or research outlines here..."
+                    className="w-full px-4 py-3 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-xs font-mono text-black dark:text-white focus:outline-none focus:border-[#1E3A5F]"
+                  />
+                </div>
+
+                <button
+                  onClick={handleConvertTextToPdf}
+                  disabled={!rawTextToConvert.trim()}
+                  className="px-6 py-2.5 rounded-xl bg-[#1E3A5F] hover:bg-[#152b46] disabled:opacity-40 text-white font-bold text-xs flex items-center gap-2 shadow-md cursor-pointer transition-all"
+                >
+                  <Download size={16} />
+                  <span>Convert & Download PDF</span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* 3. TXT / JSON EXPORTER */}
+          {activeConverterSubTab === 'textExport' && (
+            <div className="space-y-6">
+              <div className="flex items-center gap-2 text-sm font-bold text-[#1E3A5F] dark:text-emerald-400">
+                <Layers size={18} />
+                <span>Text / JSON Document Exporter</span>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-400 mb-1">File Name</label>
+                  <input
+                    type="text"
+                    value={pdfDocumentTitle}
+                    onChange={(e) => setPdfDocumentTitle(e.target.value)}
+                    placeholder="e.g. Study_Export"
+                    className="w-full px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-xs font-medium text-black dark:text-white focus:outline-none focus:border-[#1E3A5F]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-400 mb-1">Content to Export</label>
+                  <textarea
+                    rows={8}
+                    value={rawTextToConvert}
+                    onChange={(e) => setRawTextToConvert(e.target.value)}
+                    placeholder="Type or paste content to export as .txt or .json format..."
+                    className="w-full px-4 py-3 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-xs font-mono text-black dark:text-white focus:outline-none focus:border-[#1E3A5F]"
+                  />
+                </div>
+
+                <div className="flex flex-wrap items-center gap-3">
+                  <button
+                    onClick={handleExportAsTxt}
+                    disabled={!rawTextToConvert.trim()}
+                    className="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-white font-bold text-xs flex items-center gap-2 shadow-md cursor-pointer transition-all"
+                  >
+                    <Download size={16} />
+                    <span>Export as .TXT</span>
+                  </button>
+
+                  <button
+                    onClick={handleExportAsJson}
+                    disabled={!rawTextToConvert.trim()}
+                    className="px-6 py-2.5 rounded-xl bg-[#5865F2] hover:bg-[#4752C4] disabled:opacity-40 text-white font-bold text-xs flex items-center gap-2 shadow-md cursor-pointer transition-all"
+                  >
+                    <Download size={16} />
+                    <span>Export as .JSON</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
         </div>
       )}
 

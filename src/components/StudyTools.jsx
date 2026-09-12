@@ -33,11 +33,7 @@ export default function StudyTools() {
   const [soundEnabled, setSoundEnabled] = useState(true);
 
   // Flashcards State
-  const [cards, setCards] = useState([
-    { id: 1, question: 'What is a Semaphore in Operating Systems?', answer: 'A integer variable used for process synchronization and solving critical section problems via wait() and signal() operations.' },
-    { id: 2, question: 'What is the Time Complexity of Dijkstra Algorithm with Min-Heap?', answer: 'O((V + E) log V), where V is vertices and E is edges.' },
-    { id: 3, question: 'What is the key principle of Dynamic Programming?', answer: 'Breaking a problem into overlapping subproblems, solving each subproblem once, and storing the result using memoization or tabular lookup.' }
-  ]);
+  const [cards, setCards] = useState([]);
   const [currentCardIdx, setCurrentCardIdx] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [flashcardTopicInput, setFlashcardTopicInput] = useState('');
@@ -51,7 +47,7 @@ export default function StudyTools() {
   const [quizSubmitted, setQuizSubmitted] = useState(false);
 
   // Notes State
-  const [noteContent, setNoteContent] = useState('# Operating Systems Notes\n\n- Semaphore: Mutex binary variable.\n- Deadlock conditions: Mutual Exclusion, Hold & Wait, No Preemption, Circular Wait.');
+  const [noteContent, setNoteContent] = useState('');
   const [summaryResult, setSummaryResult] = useState('');
   const [isSummarizing, setIsSummarizing] = useState(false);
 
