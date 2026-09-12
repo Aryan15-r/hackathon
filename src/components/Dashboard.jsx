@@ -53,19 +53,21 @@ export default function Dashboard() {
         <div className="banner-content">
           <span className="banner-badge">STUDENT DASHBOARD</span>
           <h1 className="banner-greeting">
-            Welcome back, <span className="gradient-text">{userProfile.fullName}</span> 👋
+            Welcome back, <span className="gradient-text">{userProfile?.full_name || 'Student'}</span> 👋
           </h1>
           <p className="banner-subtext">
-            {userProfile.college} • {userProfile.branch} (Year {userProfile.year})
+            {userProfile?.college ? `${userProfile.college}` : 'Update your profile to add your college'}
+            {userProfile?.branch ? ` • ${userProfile.branch}` : ''}
+            {userProfile?.year ? ` (Year ${userProfile.year})` : ''}
           </p>
         </div>
 
-        {/* Focus Streak Counter */}
+        {/* Pomodoro sessions today */}
         <div className="streak-badge glass-card">
           <Flame size={24} className="streak-icon" />
           <div className="streak-info">
-            <span className="streak-count">7 Days</span>
-            <span className="streak-label">Study Streak 🔥</span>
+            <span className="streak-count">{completedSessions} Sessions</span>
+            <span className="streak-label">Focus Today 🔥</span>
           </div>
         </div>
       </div>
@@ -227,18 +229,35 @@ export default function Dashboard() {
             </div>
 
             <div className="community-feed">
-              {messages.slice(-3).map(msg => (
-                <div key={msg.id} className="feed-message-item">
-                  <img src={msg.user.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'} alt="Avatar" className="feed-avatar" />
-                  <div className="feed-msg-content">
-                    <div className="feed-user-meta">
-                      <span className="feed-author">{msg.user.full_name}</span>
-                      <span className="feed-time">12m ago</span>
-                    </div>
-                    <p className="feed-text">{msg.content}</p>
-                  </div>
+              {messages.length === 0 ? (
+                <div className="empty-state" style={{ padding: '1.5rem' }}>
+                  <span className="empty-state-icon">💬</span>
+                  <p style={{ fontSize: '0.85rem' }}>No discussions yet. Be the first!</p>
                 </div>
-              ))}
+              ) : (
+                messages.slice(-3).map(msg => {
+                  const author = msg.profiles?.full_name || 'Student';
+                  const av = msg.profiles?.avatar_url;
+                  const initials = author.split(' ').map(n => n[0]).join('').slice(0,2).toUpperCase();
+                  const ts = msg.created_at ? new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+                  return (
+                    <div key={msg.id} className="feed-message-item">
+                      {av ? (
+                        <img src={av} alt={author} className="feed-avatar" />
+                      ) : (
+                        <div className="feed-avatar" style={{ background: 'var(--navy)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.72rem', borderRadius: '50%', flexShrink: 0 }}>{initials}</div>
+                      )}
+                      <div className="feed-msg-content">
+                        <div className="feed-user-meta">
+                          <span className="feed-author">{author}</span>
+                          <span className="feed-time">{ts}</span>
+                        </div>
+                        <p className="feed-text">{msg.content}</p>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
             </div>
           </div>
 
@@ -269,17 +288,18 @@ export default function Dashboard() {
           align-items: center;
           justify-content: space-between;
           padding: 2rem 2.25rem;
-          background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(139, 92, 246, 0.1) 50%, rgba(236, 72, 153, 0.08) 100%);
-          border-color: rgba(99, 102, 241, 0.25);
+          background: linear-gradient(135deg, rgba(30, 58, 95, 0.06) 0%, rgba(217, 119, 6, 0.05) 100%);
+          border-color: rgba(30, 58, 95, 0.12);
         }
 
         .banner-badge {
           font-size: 0.7rem;
           font-weight: 800;
           letter-spacing: 0.1em;
-          color: #a5b4fc;
+          color: var(--navy);
           margin-bottom: 0.35rem;
           display: block;
+          opacity: 0.7;
         }
 
         .banner-greeting {
@@ -341,10 +361,10 @@ export default function Dashboard() {
           justify-content: center;
         }
 
-        .metric-icon-wrapper.focus { background: rgba(6, 182, 212, 0.15); color: #06b6d4; }
-        .metric-icon-wrapper.tasks { background: rgba(16, 185, 129, 0.15); color: #10b981; }
-        .metric-icon-wrapper.sessions { background: rgba(99, 102, 241, 0.15); color: #6366f1; }
-        .metric-icon-wrapper.community { background: rgba(236, 72, 153, 0.15); color: #ec4899; }
+        .metric-icon-wrapper.focus { background: rgba(30, 58, 95, 0.1); color: #1E3A5F; }
+        .metric-icon-wrapper.tasks { background: rgba(5, 150, 105, 0.12); color: #059669; }
+        .metric-icon-wrapper.sessions { background: rgba(217, 119, 6, 0.12); color: #D97706; }
+        .metric-icon-wrapper.community { background: rgba(37, 99, 235, 0.1); color: #2563EB; }
 
         .metric-data {
           display: flex;
@@ -471,7 +491,7 @@ export default function Dashboard() {
           align-items: flex-start;
           gap: 0.75rem;
           padding: 0.75rem;
-          background: rgba(255, 255, 255, 0.03);
+          background: var(--bg-muted);
           border-radius: var(--radius-sm);
           border: 1px solid var(--card-border);
         }
@@ -508,8 +528,8 @@ export default function Dashboard() {
           text-transform: uppercase;
           padding: 0.1rem 0.4rem;
           border-radius: 4px;
-          background: rgba(99, 102, 241, 0.2);
-          color: #a5b4fc;
+          background: rgba(30, 58, 95, 0.1);
+          color: #1E3A5F;
         }
 
         .priority-tag {
@@ -519,8 +539,8 @@ export default function Dashboard() {
           border-radius: 4px;
         }
 
-        .priority-tag.high { background: rgba(239, 68, 68, 0.2); color: #fca5a5; }
-        .priority-tag.medium { background: rgba(245, 158, 11, 0.2); color: #fde68a; }
+        .priority-tag.high { background: rgba(220, 38, 38, 0.1); color: #991B1B; }
+        .priority-tag.medium { background: rgba(217, 119, 6, 0.1); color: #92400E; }
 
         .due-date {
           font-size: 0.72rem;
@@ -576,7 +596,7 @@ export default function Dashboard() {
           display: flex;
           gap: 0.75rem;
           padding: 0.75rem;
-          background: rgba(255, 255, 255, 0.03);
+          background: var(--bg-muted);
           border-radius: var(--radius-sm);
         }
 
@@ -616,8 +636,8 @@ export default function Dashboard() {
 
         .ai-feature-card {
           padding: 1.75rem;
-          background: linear-gradient(135deg, rgba(99, 102, 241, 0.2) 0%, rgba(236, 72, 153, 0.15) 100%);
-          border-color: rgba(99, 102, 241, 0.3);
+          background: linear-gradient(135deg, rgba(30, 58, 95, 0.08) 0%, rgba(217, 119, 6, 0.06) 100%);
+          border-color: rgba(30, 58, 95, 0.15);
         }
 
         .ai-card-content {
@@ -630,7 +650,8 @@ export default function Dashboard() {
           font-size: 0.68rem;
           font-weight: 800;
           letter-spacing: 0.1em;
-          color: #a5b4fc;
+          color: var(--navy);
+          opacity: 0.7;
         }
 
         .empty-tasks {

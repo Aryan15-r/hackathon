@@ -1,93 +1,272 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { supabase } from '../lib/supabase';
 
 const AppContext = createContext();
 
 export function AppProvider({ children }) {
-  // Navigation & Theme
+  // ── Auth ─────────────────────────────────────────────────────────────
+  const [session, setSession] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [userProfile, setUserProfile] = useState(null);
+
+  // ── Navigation ────────────────────────────────────────────────────────
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [theme, setTheme] = useState(() => localStorage.getItem('studyspace_theme') || 'dark');
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
-  // User Profile
-  const [userProfile, setUserProfile] = useState(() => {
-    const saved = localStorage.getItem('studyspace_user_profile');
-    return saved ? JSON.parse(saved) : {
-      username: 'aryan_dev',
-      fullName: 'Aryan Sharma',
-      avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
-      college: 'Delhi Technological University (DTU)',
-      branch: 'Computer Science & Engineering',
-      year: 3,
-      bio: 'B.Tech CSE | AI & Web Developer | Lifelong Learner'
-    };
-  });
-
-  // Tasks State
+  // ── Tasks ─────────────────────────────────────────────────────────────
   const [tasks, setTasks] = useState([]);
-  const [tasksLoading, setTasksLoading] = useState(true);
+  const [tasksLoading, setTasksLoading] = useState(false);
 
-  // Community Channels State
+  // ── Community ─────────────────────────────────────────────────────────
   const [communities, setCommunities] = useState([]);
-  const [activeCommunityId, setActiveCommunityId] = useState('comm-1');
-  const [activeChannelId, setActiveChannelId] = useState('chan-1');
+  const [activeCommunityId, setActiveCommunityId] = useState(null);
+  const [activeChannelId, setActiveChannelId] = useState(null);
   const [messages, setMessages] = useState([]);
 
-  // AI Chat History
+  // ── AI Chat ───────────────────────────────────────────────────────────
   const [aiHistory, setAiHistory] = useState([
     {
       role: 'model',
-      text: '👋 Hi Aryan! I am **StudySpace AI**, your zero-downtime academic assistant powered by Google Gemini. Ask me any conceptual doubt, request practice problems, or upload a paper summary!'
+      text: '👋 Hi! I am **StudySpace AI**, your academic assistant powered by Google Gemini. Ask me any conceptual doubt, request practice problems, or upload a paper summary!'
     }
   ]);
-  const [aiModelUsed, setAiModelUsed] = useState('gemini-3.6-flash');
+  const [aiModelUsed, setAiModelUsed] = useState('gemini-flash');
 
-  // Focus / Pomodoro Timer State
-  const [pomodoroSeconds, setPomodoroSeconds] = useState(1500); // 25 min default
+  // ── Pomodoro ──────────────────────────────────────────────────────────
+  const [pomodoroSeconds, setPomodoroSeconds] = useState(1500);
   const [pomodoroIsRunning, setPomodoroIsRunning] = useState(false);
-  const [pomodoroMode, setPomodoroMode] = useState('work'); // 'work' | 'shortBreak' | 'longBreak'
-  const [completedSessions, setCompletedSessions] = useState(3);
-  const [totalFocusedSecondsToday, setTotalFocusedSecondsToday] = useState(5400); // 90 min initial
+  const [pomodoroMode, setPomodoroMode] = useState('work');
+  const [completedSessions, setCompletedSessions] = useState(0);
+  const [totalFocusedSecondsToday, setTotalFocusedSecondsToday] = useState(0);
 
-  // Sync theme changes with body class
+  // ─────────────────────────────────────────────────────────────────────
+  // Auth listener — runs once on mount
+  // ─────────────────────────────────────────────────────────────────────
   useEffect(() => {
-    document.body.className = theme;
-    localStorage.setItem('studyspace_theme', theme);
-  }, [theme]);
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      if (session) fetchProfile(session.user.id);
+      else setAuthLoading(false);
+    });
 
-  // Sync profile changes to localStorage
-  useEffect(() => {
-    localStorage.setItem('studyspace_user_profile', JSON.stringify(userProfile));
-  }, [userProfile]);
-
-  // Initial Data Fetching from Node Backend
-  useEffect(() => {
-    async function loadInitialData() {
-      try {
-        // Fetch tasks
-        const tasksRes = await fetch('/api/tasks');
-        if (tasksRes.ok) {
-          const tasksData = await tasksRes.json();
-          setTasks(tasksData);
-        }
-
-        // Fetch communities
-        const commRes = await fetch('/api/community');
-        if (commRes.ok) {
-          const commData = await commRes.json();
-          setCommunities(commData.communities || []);
-          setMessages(commData.messages || []);
-        }
-      } catch (err) {
-        console.warn('Backend API connection warning (running with local fallbacks):', err);
-      } finally {
-        setTasksLoading(false);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      if (session) {
+        fetchProfile(session.user.id);
+      } else {
+        setUserProfile(null);
+        setTasks([]);
+        setCommunities([]);
+        setMessages([]);
+        setAuthLoading(false);
       }
-    }
+    });
 
-    loadInitialData();
+    return () => subscription.unsubscribe();
   }, []);
 
-  // Pomodoro Interval Effect
+  // ─────────────────────────────────────────────────────────────────────
+  // Load data when session is established
+  // ─────────────────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (session) {
+      loadTasks();
+      loadCommunities();
+      loadStudyStats();
+    }
+  }, [session]);
+
+  // ─────────────────────────────────────────────────────────────────────
+  // Fetch / update profile
+  // ─────────────────────────────────────────────────────────────────────
+  const fetchProfile = async (userId) => {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
+
+    if (!error && data) setUserProfile(data);
+    setAuthLoading(false);
+  };
+
+  const updateProfile = async (updates) => {
+    if (!session) return;
+    const { data, error } = await supabase
+      .from('profiles')
+      .update({ ...updates, updated_at: new Date().toISOString() })
+      .eq('id', session.user.id)
+      .select()
+      .single();
+    if (!error && data) setUserProfile(data);
+    return { data, error };
+  };
+
+  // ─────────────────────────────────────────────────────────────────────
+  // Tasks
+  // ─────────────────────────────────────────────────────────────────────
+  const loadTasks = async () => {
+    if (!session) return;
+    setTasksLoading(true);
+    const { data, error } = await supabase
+      .from('tasks')
+      .select('*')
+      .eq('user_id', session.user.id)
+      .order('created_at', { ascending: false });
+    if (!error) setTasks(data || []);
+    setTasksLoading(false);
+  };
+
+  const addTask = async (newTaskData) => {
+    if (!session) return;
+    const { data, error } = await supabase
+      .from('tasks')
+      .insert({ ...newTaskData, user_id: session.user.id })
+      .select()
+      .single();
+    if (!error && data) setTasks(prev => [data, ...prev]);
+    return data;
+  };
+
+  const toggleTask = async (id) => {
+    const target = tasks.find(t => t.id === id);
+    if (!target) return;
+    const updatedCompleted = !target.completed;
+    setTasks(prev => prev.map(t => t.id === id ? { ...t, completed: updatedCompleted } : t));
+    await supabase.from('tasks').update({ completed: updatedCompleted, updated_at: new Date().toISOString() }).eq('id', id);
+  };
+
+  const deleteTask = async (id) => {
+    setTasks(prev => prev.filter(t => t.id !== id));
+    await supabase.from('tasks').delete().eq('id', id);
+  };
+
+  // ─────────────────────────────────────────────────────────────────────
+  // Communities & Channels
+  // ─────────────────────────────────────────────────────────────────────
+  const loadCommunities = async () => {
+    const { data, error } = await supabase
+      .from('communities')
+      .select('*, channels(*)')
+      .order('created_at', { ascending: true });
+
+    if (!error && data) {
+      setCommunities(data);
+      if (data.length > 0) {
+        setActiveCommunityId(data[0].id);
+        if (data[0].channels?.length > 0) {
+          setActiveChannelId(data[0].channels[0].id);
+        }
+      }
+    }
+  };
+
+  const loadMessages = useCallback(async (channelId) => {
+    if (!channelId) return;
+    const { data, error } = await supabase
+      .from('messages')
+      .select('*, profiles(id, full_name, username, avatar_url, college)')
+      .eq('channel_id', channelId)
+      .order('created_at', { ascending: true })
+      .limit(100);
+    if (!error) setMessages(data || []);
+  }, []);
+
+  // Load messages whenever active channel changes
+  useEffect(() => {
+    if (activeChannelId) loadMessages(activeChannelId);
+  }, [activeChannelId, loadMessages]);
+
+  // Realtime subscription for messages
+  useEffect(() => {
+    if (!activeChannelId) return;
+
+    const channel = supabase
+      .channel(`messages:${activeChannelId}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'messages', filter: `channel_id=eq.${activeChannelId}` },
+        async (payload) => {
+          // Fetch the inserted message with profile join
+          const { data } = await supabase
+            .from('messages')
+            .select('*, profiles(id, full_name, username, avatar_url, college)')
+            .eq('id', payload.new.id)
+            .single();
+          if (data) setMessages(prev => [...prev, data]);
+        }
+      )
+      .subscribe();
+
+    return () => supabase.removeChannel(channel);
+  }, [activeChannelId]);
+
+  const sendMessage = async (channelId, text) => {
+    if (!session) return;
+    await supabase.from('messages').insert({
+      channel_id: channelId,
+      user_id: session.user.id,
+      content: text,
+    });
+    // Realtime subscription handles UI update
+  };
+
+  const addReaction = async (messageId, emoji) => {
+    if (!session) return;
+    // Optimistic toggle in UI
+    setMessages(prev => prev.map(m => {
+      if (m.id !== messageId) return m;
+      const reactions = m.reactions || [];
+      const existing = reactions.find(r => r.emoji === emoji);
+      if (existing) {
+        return { ...m, reactions: reactions.map(r => r.emoji === emoji ? { ...r, count: r.count + 1 } : r) };
+      }
+      return { ...m, reactions: [...reactions, { emoji, count: 1 }] };
+    }));
+
+    // Upsert into DB (unique constraint handles duplicates)
+    await supabase.from('message_reactions').upsert({
+      message_id: messageId,
+      user_id: session.user.id,
+      emoji,
+    }, { onConflict: 'message_id,user_id,emoji' });
+  };
+
+  // ─────────────────────────────────────────────────────────────────────
+  // Study Stats (Pomodoro persistence)
+  // ─────────────────────────────────────────────────────────────────────
+  const loadStudyStats = async () => {
+    if (!session) return;
+    const { data } = await supabase
+      .from('study_tracker_states')
+      .select('*')
+      .eq('user_id', session.user.id)
+      .single();
+
+    if (data) {
+      const today = new Date().toISOString().split('T')[0];
+      if (data.last_active_date === today) {
+        setCompletedSessions(data.completed_sessions_today || 0);
+        setTotalFocusedSecondsToday(data.total_focus_seconds_today || 0);
+      }
+      // If last_active_date is not today, stats reset to 0 (already default)
+    }
+  };
+
+  const persistStudyStats = useCallback(async (sessions, focusSecs) => {
+    if (!session) return;
+    await supabase.from('study_tracker_states').upsert({
+      user_id: session.user.id,
+      completed_sessions_today: sessions,
+      total_focus_seconds_today: focusSecs,
+      last_active_date: new Date().toISOString().split('T')[0],
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'user_id' });
+  }, [session]);
+
+  // ─────────────────────────────────────────────────────────────────────
+  // Pomodoro Interval
+  // ─────────────────────────────────────────────────────────────────────
   useEffect(() => {
     let interval = null;
     if (pomodoroIsRunning && pomodoroSeconds > 0) {
@@ -100,150 +279,50 @@ export function AppProvider({ children }) {
     } else if (pomodoroSeconds === 0 && pomodoroIsRunning) {
       setPomodoroIsRunning(false);
       if (pomodoroMode === 'work') {
-        setCompletedSessions(prev => prev + 1);
+        const newSessions = completedSessions + 1;
+        setCompletedSessions(newSessions);
+        persistStudyStats(newSessions, totalFocusedSecondsToday);
         alert('🎉 Focus Session Completed! Time for a break.');
       } else {
         alert('🔔 Break completed! Ready to study?');
       }
     }
     return () => clearInterval(interval);
-  }, [pomodoroIsRunning, pomodoroSeconds, pomodoroMode]);
+  }, [pomodoroIsRunning, pomodoroSeconds, pomodoroMode, completedSessions, totalFocusedSecondsToday, persistStudyStats]);
 
-  // Task Actions
-  const addTask = async (newTaskData) => {
-    try {
-      const res = await fetch('/api/tasks', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newTaskData)
-      });
-      if (res.ok) {
-        const created = await res.json();
-        setTasks(prev => [created, ...prev]);
-        return created;
-      }
-    } catch (e) {
-      // Fallback local
-      const localTask = {
-        id: `task-${Date.now()}`,
-        ...newTaskData,
-        completed: false,
-        created_at: new Date().toISOString()
-      };
-      setTasks(prev => [localTask, ...prev]);
-      return localTask;
-    }
+  // ─────────────────────────────────────────────────────────────────────
+  // Auth Actions
+  // ─────────────────────────────────────────────────────────────────────
+  const signOut = async () => {
+    await supabase.auth.signOut();
   };
 
-  const toggleTask = async (id) => {
-    const target = tasks.find(t => t.id === id);
-    if (!target) return;
-    const updatedCompleted = !target.completed;
-
-    setTasks(prev => prev.map(t => t.id === id ? { ...t, completed: updatedCompleted } : t));
-
-    try {
-      await fetch(`/api/tasks/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ completed: updatedCompleted })
-      });
-    } catch (e) {
-      // Swallowed for offline
-    }
-  };
-
-  const deleteTask = async (id) => {
-    setTasks(prev => prev.filter(t => t.id !== id));
-    try {
-      await fetch(`/api/tasks/${id}`, { method: 'DELETE' });
-    } catch (e) {
-      // Swallowed for offline
-    }
-  };
-
-  // Community Actions
-  const sendMessage = async (channelId, text) => {
-    const msgPayload = {
-      channel_id: channelId,
-      content: text,
-      user: {
-        full_name: userProfile.fullName,
-        username: userProfile.username,
-        college: userProfile.college,
-        avatar_url: userProfile.avatarUrl
-      }
-    };
-
-    try {
-      const res = await fetch('/api/community/message', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(msgPayload)
-      });
-      if (res.ok) {
-        const newMsg = await res.json();
-        setMessages(prev => [...prev, newMsg]);
-        return;
-      }
-    } catch (e) {
-      // Offline fallback
-    }
-
-    const localMsg = {
-      id: `msg-${Date.now()}`,
-      channel_id: channelId,
-      user: msgPayload.user,
-      content: text,
-      created_at: new Date().toISOString(),
-      reactions: []
-    };
-    setMessages(prev => [...prev, localMsg]);
-  };
-
-  const addReaction = async (messageId, emoji) => {
-    setMessages(prev => prev.map(m => {
-      if (m.id === messageId) {
-        const existing = m.reactions.find(r => r.emoji === emoji);
-        let newReactions;
-        if (existing) {
-          newReactions = m.reactions.map(r => r.emoji === emoji ? { ...r, count: r.count + 1 } : r);
-        } else {
-          newReactions = [...m.reactions, { emoji, count: 1, users: ['me'] }];
-        }
-        return { ...m, reactions: newReactions };
-      }
-      return m;
-    }));
-
-    try {
-      await fetch('/api/community/reaction', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message_id: messageId, emoji })
-      });
-    } catch (e) {}
-  };
-
-  const toggleTheme = () => {
-    setTheme(prev => prev === 'dark' ? 'light' : 'dark');
-  };
-
+  // ─────────────────────────────────────────────────────────────────────
+  // Context Value
+  // ─────────────────────────────────────────────────────────────────────
   return (
     <AppContext.Provider value={{
-      activeTab,
-      setActiveTab,
-      theme,
-      toggleTheme,
+      // Auth
+      session,
+      authLoading,
+      signOut,
+      // Profile
       userProfile,
       setUserProfile,
+      updateProfile,
+      // Navigation
+      activeTab,
+      setActiveTab,
       isProfileModalOpen,
       setIsProfileModalOpen,
+      // Tasks
       tasks,
       tasksLoading,
       addTask,
       toggleTask,
       deleteTask,
+      loadTasks,
+      // Community
       communities,
       setCommunities,
       activeCommunityId,
@@ -253,10 +332,12 @@ export function AppProvider({ children }) {
       messages,
       sendMessage,
       addReaction,
+      // AI
       aiHistory,
       setAiHistory,
       aiModelUsed,
       setAiModelUsed,
+      // Pomodoro
       pomodoroSeconds,
       setPomodoroSeconds,
       pomodoroIsRunning,
@@ -264,7 +345,7 @@ export function AppProvider({ children }) {
       pomodoroMode,
       setPomodoroMode,
       completedSessions,
-      totalFocusedSecondsToday
+      totalFocusedSecondsToday,
     }}>
       {children}
     </AppContext.Provider>

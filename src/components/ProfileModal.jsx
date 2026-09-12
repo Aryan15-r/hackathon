@@ -1,238 +1,211 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
-import { X, Save, User, GraduationCap, BookOpen, Calendar, Image } from 'lucide-react';
+import { X, Save, User, GraduationCap, BookOpen, Calendar, Image, Loader2 } from 'lucide-react';
 
 export default function ProfileModal() {
-  const { isProfileModalOpen, setIsProfileModalOpen, userProfile, setUserProfile } = useApp();
+  const { isProfileModalOpen, setIsProfileModalOpen, userProfile, updateProfile, session } = useApp();
 
-  const [formData, setFormData] = useState({ ...userProfile });
+  const [formData, setFormData] = useState({
+    full_name: '',
+    username: '',
+    college: '',
+    branch: '',
+    year: 1,
+    bio: '',
+    avatar_url: '',
+  });
+  const [saving, setSaving] = useState(false);
+  const [saveMsg, setSaveMsg] = useState('');
+
+  // Sync form from real profile whenever modal opens
+  useEffect(() => {
+    if (userProfile) {
+      setFormData({
+        full_name:  userProfile.full_name  || '',
+        username:   userProfile.username   || '',
+        college:    userProfile.college    || '',
+        branch:     userProfile.branch     || '',
+        year:       userProfile.year       || 1,
+        bio:        userProfile.bio        || '',
+        avatar_url: userProfile.avatar_url || '',
+      });
+    }
+  }, [userProfile, isProfileModalOpen]);
 
   if (!isProfileModalOpen) return null;
 
-  const handleSubmit = (e) => {
+  const initials = formData.full_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || '?';
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setUserProfile(formData);
-    setIsProfileModalOpen(false);
+    setSaving(true);
+    setSaveMsg('');
+    const { error } = await updateProfile(formData);
+    setSaving(false);
+    if (error) {
+      setSaveMsg('❌ ' + error.message);
+    } else {
+      setSaveMsg('✅ Profile saved!');
+      setTimeout(() => {
+        setIsProfileModalOpen(false);
+        setSaveMsg('');
+      }, 1200);
+    }
   };
 
   return (
     <div className="modal-overlay" onClick={() => setIsProfileModalOpen(false)}>
-      <div className="modal-content glass-card animate-fade-in" onClick={e => e.stopPropagation()}>
+      <div className="modal-content animate-fade-in" onClick={e => e.stopPropagation()}>
+        {/* Header */}
         <div className="modal-header">
-          <h2>Student Profile Settings</h2>
-          <button className="close-btn" onClick={() => setIsProfileModalOpen(false)}>
-            <X size={20} />
+          <h2 style={{ fontFamily: 'Outfit', fontSize: '1.25rem', color: 'var(--text-primary)' }}>
+            Profile Settings
+          </h2>
+          <button className="modal-close-btn" onClick={() => setIsProfileModalOpen(false)}>
+            <X size={18} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="modal-form">
-          <div className="avatar-preview-section">
-            <img src={formData.avatarUrl} alt="Avatar" className="avatar-preview" />
-            <div className="avatar-input-wrapper">
-              <label><Image size={14} /> Avatar Image URL</label>
+        {/* Body */}
+        <form onSubmit={handleSubmit} className="modal-body">
+          {/* Avatar row */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.75rem', background: 'var(--bg-muted)', borderRadius: 'var(--radius-sm)' }}>
+            {formData.avatar_url ? (
+              <img src={formData.avatar_url} alt="Avatar" style={{ width: 56, height: 56, borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--card-border)' }} />
+            ) : (
+              <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'var(--navy)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '1.1rem', flexShrink: 0 }}>
+                {initials}
+              </div>
+            )}
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <label style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                <Image size={13} /> Avatar URL
+              </label>
               <input
-                type="text"
-                value={formData.avatarUrl}
-                onChange={e => setFormData({ ...formData, avatarUrl: e.target.value })}
-                required
+                type="url"
+                value={formData.avatar_url}
+                onChange={e => setFormData({ ...formData, avatar_url: e.target.value })}
+                placeholder="https://..."
+                className="form-input"
+                style={{ fontSize: '0.85rem', padding: '0.5rem 0.75rem' }}
               />
             </div>
           </div>
 
-          <div className="form-grid">
+          {/* Email (read-only) */}
+          <div className="form-group">
+            <label className="form-label">Email (from account)</label>
+            <input
+              type="email"
+              value={session?.user?.email || ''}
+              disabled
+              className="form-input"
+              style={{ background: '#F3F0EC', color: 'var(--text-muted)', cursor: 'not-allowed' }}
+            />
+          </div>
+
+          {/* Name + Username */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
             <div className="form-group">
-              <label><User size={14} /> Full Name</label>
+              <label className="form-label"><User size={13} style={{ display: 'inline', marginRight: 4 }} />Full Name</label>
               <input
                 type="text"
-                value={formData.fullName}
-                onChange={e => setFormData({ ...formData, fullName: e.target.value })}
+                value={formData.full_name}
+                onChange={e => setFormData({ ...formData, full_name: e.target.value })}
+                placeholder="Aryan Sharma"
                 required
+                className="form-input"
               />
             </div>
-
             <div className="form-group">
-              <label><User size={14} /> Username</label>
+              <label className="form-label"><User size={13} style={{ display: 'inline', marginRight: 4 }} />Username</label>
               <input
                 type="text"
                 value={formData.username}
                 onChange={e => setFormData({ ...formData, username: e.target.value })}
-                required
+                placeholder="aryan_dev"
+                className="form-input"
               />
             </div>
+          </div>
 
-            <div className="form-group span-2">
-              <label><GraduationCap size={14} /> College / University</label>
-              <input
-                type="text"
-                value={formData.college}
-                onChange={e => setFormData({ ...formData, college: e.target.value })}
-                required
-              />
-            </div>
+          {/* College */}
+          <div className="form-group">
+            <label className="form-label"><GraduationCap size={13} style={{ display: 'inline', marginRight: 4 }} />College / University</label>
+            <input
+              type="text"
+              value={formData.college}
+              onChange={e => setFormData({ ...formData, college: e.target.value })}
+              placeholder="Delhi Technological University"
+              className="form-input"
+            />
+          </div>
 
+          {/* Branch + Year */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
             <div className="form-group">
-              <label><BookOpen size={14} /> Branch of Study</label>
+              <label className="form-label"><BookOpen size={13} style={{ display: 'inline', marginRight: 4 }} />Branch</label>
               <input
                 type="text"
                 value={formData.branch}
                 onChange={e => setFormData({ ...formData, branch: e.target.value })}
-                required
+                placeholder="Computer Science"
+                className="form-input"
               />
             </div>
-
             <div className="form-group">
-              <label><Calendar size={14} /> Academic Year</label>
+              <label className="form-label"><Calendar size={13} style={{ display: 'inline', marginRight: 4 }} />Year</label>
               <select
                 value={formData.year}
                 onChange={e => setFormData({ ...formData, year: Number(e.target.value) })}
+                className="form-input"
               >
-                <option value={1}>1st Year (Freshman)</option>
-                <option value={2}>2nd Year (Sophomore)</option>
-                <option value={3}>3rd Year (Junior)</option>
-                <option value={4}>4th Year (Senior)</option>
+                <option value={1}>1st Year</option>
+                <option value={2}>2nd Year</option>
+                <option value={3}>3rd Year</option>
+                <option value={4}>4th Year</option>
+                <option value={5}>5th Year</option>
               </select>
             </div>
           </div>
 
-          <div className="modal-actions">
-            <button type="button" className="cancel-btn" onClick={() => setIsProfileModalOpen(false)}>
+          {/* Bio */}
+          <div className="form-group">
+            <label className="form-label">Bio</label>
+            <textarea
+              value={formData.bio}
+              onChange={e => setFormData({ ...formData, bio: e.target.value })}
+              placeholder="B.Tech CSE | AI & Web Developer"
+              rows={2}
+              className="form-input"
+              style={{ resize: 'vertical' }}
+            />
+          </div>
+
+          {saveMsg && (
+            <div style={{ fontSize: '0.875rem', fontWeight: 500, color: saveMsg.startsWith('✅') ? '#065F46' : '#991B1B', background: saveMsg.startsWith('✅') ? '#F0FDF4' : '#FEF2F2', padding: '0.6rem 0.9rem', borderRadius: 8 }}>
+              {saveMsg}
+            </div>
+          )}
+
+          {/* Actions */}
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+            <button type="button" className="btn-secondary" onClick={() => setIsProfileModalOpen(false)}>
               Cancel
             </button>
-            <button type="submit" className="gradient-button">
-              <Save size={16} /> Save Profile Changes
+            <button type="submit" className="gradient-button" disabled={saving}>
+              {saving ? <Loader2 size={15} className="spin" /> : <Save size={15} />}
+              {saving ? 'Saving...' : 'Save Changes'}
             </button>
           </div>
         </form>
       </div>
 
       <style>{`
-        .modal-overlay {
-          position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: rgba(0, 0, 0, 0.7);
-          backdrop-filter: blur(8px);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          z-index: 100;
-          padding: 1.5rem;
-        }
-
-        .modal-content {
-          width: 100%;
-          max-width: 560px;
-          padding: 1.75rem;
-          border-radius: var(--radius-lg);
-        }
-
-        .modal-header {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          margin-bottom: 1.5rem;
-        }
-
-        .modal-header h2 {
-          font-size: 1.35rem;
-          color: var(--text-primary);
-        }
-
-        .close-btn {
-          background: transparent;
-          border: none;
-          color: var(--text-muted);
-          cursor: pointer;
-        }
-
-        .close-btn:hover {
-          color: var(--text-primary);
-        }
-
-        .avatar-preview-section {
-          display: flex;
-          align-items: center;
-          gap: 1rem;
-          margin-bottom: 1.25rem;
-          padding: 0.85rem;
-          background: rgba(255, 255, 255, 0.03);
-          border-radius: var(--radius-md);
-        }
-
-        .avatar-preview {
-          width: 60px;
-          height: 60px;
-          border-radius: 50%;
-          object-fit: cover;
-          border: 2px solid var(--accent-primary);
-        }
-
-        .avatar-input-wrapper {
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          gap: 0.35rem;
-        }
-
-        .form-grid {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 1rem;
-          margin-bottom: 1.5rem;
-        }
-
-        .span-2 {
-          grid-column: span 2;
-        }
-
-        .form-group {
-          display: flex;
-          flex-direction: column;
-          gap: 0.4rem;
-        }
-
-        .form-group label, .avatar-input-wrapper label {
-          font-size: 0.8rem;
-          font-weight: 600;
-          color: var(--text-secondary);
-          display: flex;
-          align-items: center;
-          gap: 0.35rem;
-        }
-
-        .form-group input, .form-group select, .avatar-input-wrapper input {
-          background: var(--input-bg);
-          border: 1px solid var(--card-border);
-          border-radius: var(--radius-sm);
-          padding: 0.6rem 0.85rem;
-          color: var(--text-primary);
-          font-family: 'Inter', sans-serif;
-          font-size: 0.9rem;
-        }
-
-        .form-group input:focus, .form-group select:focus, .avatar-input-wrapper input:focus {
-          outline: none;
-          border-color: var(--accent-primary);
-        }
-
-        .modal-actions {
-          display: flex;
-          align-items: center;
-          justify-content: flex-end;
-          gap: 0.75rem;
-        }
-
-        .cancel-btn {
-          background: transparent;
-          border: 1px solid var(--card-border);
-          color: var(--text-secondary);
-          padding: 0.6rem 1.25rem;
-          border-radius: var(--radius-sm);
-          font-weight: 600;
-          cursor: pointer;
-        }
+        .form-group { display: flex; flex-direction: column; gap: 0.35rem; }
+        .form-label { font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .spin { animation: spin 0.8s linear infinite; }
       `}</style>
     </div>
   );

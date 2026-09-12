@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { supabase } from '../lib/supabase';
 import { useApp } from '../context/AppContext';
 import {
   MessageSquare,
@@ -86,22 +87,19 @@ export default function CommunityChannels() {
     setMessageInput('');
   };
 
-  const handleCreateCommunity = (e) => {
+  const handleCreateCommunity = async (e) => {
     e.preventDefault();
     if (!newComm.name.trim()) return;
+    const { data, error } = await supabase
+      .from('communities')
+      .insert({ name: newComm.name, description: newComm.description, icon: newComm.icon })
+      .select('*, channels(*)')
+      .single();
 
-    const created = {
-      id: `comm-${Date.now()}`,
-      ...newComm,
-      channels: [
-        { id: `chan-${Date.now()}-1`, name: 'general', description: 'General channel' },
-        { id: `chan-${Date.now()}-2`, name: 'homework-help', description: 'Doubts & discussion' }
-      ]
-    };
-
-    setCommunities(prev => [...prev, created]);
-    setActiveCommunityId(created.id);
-    setActiveChannelId(created.channels[0].id);
+    if (!error && data) {
+      setCommunities(prev => [...prev, data]);
+      setActiveCommunityId(data.id);
+    }
     setIsCreateCommModalOpen(false);
     setNewComm({ name: '', description: '', icon: '📚', category: 'General', is_private: false, passcode: '' });
   };
@@ -189,15 +187,26 @@ export default function CommunityChannels() {
               <p>No messages in #{activeChannel?.name || 'this channel'} yet. Start the discussion!</p>
             </div>
           ) : (
-            channelMessages.map(msg => (
+            channelMessages.map(msg => {
+              const author = msg.profiles?.full_name || 'Student';
+              const username = msg.profiles?.username || 'user';
+              const college = msg.profiles?.college || '';
+              const av = msg.profiles?.avatar_url;
+              const initials = author.split(' ').map(n => n[0]).join('').slice(0,2).toUpperCase();
+              const ts = msg.created_at ? new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+              return (
               <div key={msg.id} className="msg-row">
-                <img src={msg.user.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'} alt="Avatar" className="sender-avatar" />
+                {av ? (
+                  <img src={av} alt={author} className="sender-avatar" />
+                ) : (
+                  <div className="sender-avatar" style={{ background: 'var(--navy)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.75rem', borderRadius: '50%', flexShrink: 0 }}>{initials}</div>
+                )}
 
                 <div className="msg-body">
                   <div className="sender-header">
-                    <span className="sender-name">{msg.user.full_name}</span>
-                    <span className="sender-college">@{msg.user.username} • {msg.user.college}</span>
-                    <span className="msg-time">{new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                    <span className="sender-name">{author}</span>
+                    <span className="sender-college">@{username}{college ? ` • ${college}` : ''}</span>
+                    <span className="msg-time">{ts}</span>
                   </div>
 
                   <p className="msg-text">{msg.content}</p>
@@ -229,8 +238,10 @@ export default function CommunityChannels() {
                   </div>
                 </div>
               </div>
-            ))
+              );
+            })
           )}
+
         </div>
 
         {/* Message Input Box */}
