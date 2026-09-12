@@ -305,6 +305,107 @@ Where:
 - **Tip 3**: Use the Pomodoro timer in **Study Tools** to study this topic in focused 25-minute sprints!`;
 }
 
+// Formatted Markdown, Code Blocks & Math Equations Renderer
+function FormattedMessage({ content }) {
+  if (!content) return null;
+
+  const codeBlockRegex = /```(\w*)\n([\s\S]*?)```/g;
+  const parts = [];
+  let lastIndex = 0;
+  let match;
+
+  while ((match = codeBlockRegex.exec(content)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push({ type: 'text', value: content.substring(lastIndex, match.index) });
+    }
+    parts.push({
+      type: 'code',
+      language: match[1] || 'code',
+      code: match[2].trim()
+    });
+    lastIndex = codeBlockRegex.lastIndex;
+  }
+
+  if (lastIndex < content.length) {
+    parts.push({ type: 'text', value: content.substring(lastIndex) });
+  }
+
+  return (
+    <div className="formatted-msg-container space-y-3">
+      {parts.map((part, pIdx) => {
+        if (part.type === 'code') {
+          return (
+            <div key={pIdx} className="my-3 rounded-xl overflow-hidden border border-white/15 bg-[#0D1117] shadow-lg font-mono text-xs">
+              <div className="bg-[#161B22] px-4 py-2 flex items-center justify-between border-b border-white/10 text-[11px] text-gray-400 font-semibold uppercase tracking-wider">
+                <span>{part.language || 'Code Snippet'}</span>
+                <button
+                  onClick={() => navigator.clipboard.writeText(part.code)}
+                  className="hover:text-white transition-colors cursor-pointer flex items-center gap-1 text-[11px]"
+                >
+                  <Copy size={12} />
+                  <span>Copy Code</span>
+                </button>
+              </div>
+              <pre className="p-4 overflow-x-auto text-emerald-300 leading-relaxed font-mono selection:bg-emerald-500/30">
+                <code>{part.code}</code>
+              </pre>
+            </div>
+          );
+        }
+
+        const lines = part.value.split('\n');
+        return (
+          <div key={pIdx} className="space-y-1.5 leading-relaxed">
+            {lines.map((line, lIdx) => {
+              const trimmed = line.trim();
+              if (!trimmed) return <div key={lIdx} className="h-2" />;
+
+              if (trimmed.startsWith('### ')) {
+                return <h3 key={lIdx} className="text-base font-bold text-amber-300 mt-3 mb-1">{trimmed.replace('### ', '')}</h3>;
+              }
+              if (trimmed.startsWith('## ')) {
+                return <h2 key={lIdx} className="text-lg font-bold text-indigo-300 mt-4 mb-1">{trimmed.replace('## ', '')}</h2>;
+              }
+              if (trimmed.startsWith('# ')) {
+                return <h1 key={lIdx} className="text-xl font-extrabold text-white mt-4 mb-2">{trimmed.replace('# ', '')}</h1>;
+              }
+
+              if (trimmed.startsWith('- ') || trimmed.startsWith('• ')) {
+                const bulletText = trimmed.replace(/^[-•]\s*/, '');
+                return (
+                  <div key={lIdx} className="flex items-start gap-2 text-xs sm:text-sm pl-2">
+                    <span className="text-amber-400 font-bold">•</span>
+                    <span>{parseInlineFormatting(bulletText)}</span>
+                  </div>
+                );
+              }
+
+              return <p key={lIdx} className="text-xs sm:text-sm text-gray-200">{parseInlineFormatting(line)}</p>;
+            })}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function parseInlineFormatting(str) {
+  if (!str) return '';
+  const parts = str.split(/(\*\*.*?\*\*|`.*?`|\$.*?\$)/g);
+  return parts.map((chunk, i) => {
+    if (chunk.startsWith('**') && chunk.endsWith('**')) {
+      return <strong key={i} className="text-white font-semibold">{chunk.slice(2, -2)}</strong>;
+    }
+    if (chunk.startsWith('`') && chunk.endsWith('`')) {
+      return <code key={i} className="bg-white/10 px-1.5 py-0.5 rounded text-[11px] font-mono text-emerald-300 border border-white/10">{chunk.slice(1, -1)}</code>;
+    }
+    if (chunk.startsWith('$') && chunk.endsWith('$') && chunk.length > 2) {
+      return <span key={i} className="inline-block bg-indigo-950/60 text-amber-300 font-mono px-2 py-0.5 rounded border border-indigo-500/30 text-xs shadow-sm">{chunk.slice(1, -1)}</span>;
+    }
+    return chunk;
+  });
+}
+
 export default function AiAssistant() {
   const { aiHistory, setAiHistory, aiModelUsed, setAiModelUsed } = useApp();
   const [inputPrompt, setInputPrompt] = useState('');
@@ -456,7 +557,7 @@ export default function AiAssistant() {
             </div>
 
             <div className="msg-content">
-              {msg.text}
+              <FormattedMessage content={msg.text} />
             </div>
           </div>
         ))}
