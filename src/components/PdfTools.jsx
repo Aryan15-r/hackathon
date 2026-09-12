@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { jsPDF } from 'jspdf';
 import {
   FileText,
   UploadCloud,
@@ -24,7 +25,7 @@ import {
 } from 'lucide-react';
 
 export default function PdfTools() {
-  const [activeStudioTab, setActiveStudioTab] = useState('pdf'); // 'pdf' | 'ppt' | 'tools'
+  const [activeStudioTab, setActiveStudioTab] = useState('pdf'); // 'pdf' | 'ppt' | 'convert'
   
   // --- PDF STUDIO STATE ---
   const [uploadedFile, setUploadedFile] = useState(null);
@@ -43,6 +44,46 @@ export default function PdfTools() {
   const [showSpeakerNotes, setShowSpeakerNotes] = useState(true);
   const [isFullscreenPpt, setIsFullscreenPpt] = useState(false);
 
+  // --- CONVERSION STUDIO STATE ---
+  const [imageFiles, setImageFiles] = useState([]);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+
+  const handleImageUpload = (e) => {
+    const files = Array.from(e.target.files);
+    const validImages = files.filter(f => f.type.startsWith('image/'));
+    setImageFiles(prev => [...prev, ...validImages]);
+  };
+
+  const handleGeneratePdfFromImages = async () => {
+    if (imageFiles.length === 0 || isGeneratingPdf) return;
+    setIsGeneratingPdf(true);
+    
+    try {
+      const doc = new jsPDF();
+      for (let i = 0; i < imageFiles.length; i++) {
+        if (i > 0) doc.addPage();
+        
+        const file = imageFiles[i];
+        const imgData = await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = (e) => resolve(e.target.result);
+          reader.readAsDataURL(file);
+        });
+
+        // Add image to fit A4 page
+        const imgProps = doc.getImageProperties(imgData);
+        const pdfWidth = doc.internal.pageSize.getWidth();
+        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+        
+        doc.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+      }
+      doc.save('Converted_Images.pdf');
+    } catch (err) {
+      alert('Error generating PDF.');
+    } finally {
+      setIsGeneratingPdf(false);
+    }
+  };
   const sampleDocuments = [
     {
       name: 'Operating_Systems_Syllabus.pdf',
@@ -61,14 +102,8 @@ export default function PdfTools() {
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
-      const mockDoc = {
-        name: file.name,
-        size: `${(file.size / (1024 * 1024)).toFixed(2)} MB`,
-        pages: Math.floor(Math.random() * 15) + 3,
-        sampleText: `DOCUMENT EXTRACTED TEXT FROM ${file.name}:\n\nAbstract: This document introduces key higher education study concepts, experimental evaluation parameters, and course assignments.\n\nSection 1: Academic Overview\nSection 2: Theoretical Formulations & Formulas\nSection 3: Conclusion & Next Steps.`
-      };
-      setUploadedFile(mockDoc);
-      setExtractedText(mockDoc.sampleText);
+      // Removed mock file upload logic; this should be handled by a real backend endpoint or file reader
+      setExtractedText("No document processed. Real file upload required.");
       setSummary('');
     }
   };
@@ -210,6 +245,14 @@ export default function PdfTools() {
             >
               <Presentation size={15} className="text-amber-400" />
               <span>AI PPT Generator</span>
+            </button>
+
+            <button
+              onClick={() => setActiveStudioTab('convert')}
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${activeStudioTab === 'convert' ? 'bg-[#1E3A5F] text-white shadow-md' : 'text-black/70 dark:text-white/70 hover:text-black dark:hover:text-white'}`}
+            >
+              <Layers size={15} className="text-emerald-400" />
+              <span>Doc Convert</span>
             </button>
           </div>
         </div>
@@ -548,6 +591,57 @@ export default function PdfTools() {
             </div>
           )}
 
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* TAB 3: DOCUMENT CONVERTER STUDIO */}
+      {/* ========================================================================= */}
+      {activeStudioTab === 'convert' && (
+        <div className="bg-white dark:bg-[#1A1C23] border border-black/10 dark:border-white/10 rounded-2xl p-6 shadow-sm space-y-6">
+          <div className="flex items-center gap-2 text-sm font-bold text-[#1E3A5F] dark:text-emerald-400">
+            <Layers size={18} />
+            <span>Image to PDF Converter</span>
+          </div>
+          
+          <div className="border border-dashed border-[#1E3A5F]/30 dark:border-white/20 rounded-2xl p-8 text-center space-y-4 hover:border-[#1E3A5F] transition-colors">
+            <div className="w-16 h-16 rounded-2xl bg-[#1E3A5F]/10 dark:bg-white/10 flex items-center justify-center text-[#1E3A5F] dark:text-emerald-400 mx-auto">
+              <UploadCloud size={32} />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-[#1A1A2E] dark:text-white">Upload Images (JPG, PNG)</h3>
+              <p className="text-xs text-black/60 dark:text-white/60 mt-1">Select multiple images to combine into a single PDF.</p>
+            </div>
+            
+            <label className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#1E3A5F] hover:bg-[#152b46] text-white text-xs font-bold shadow-md cursor-pointer transition-all">
+              <span>Select Images</span>
+              <input type="file" accept="image/*" multiple onChange={handleImageUpload} hidden />
+            </label>
+          </div>
+
+          {imageFiles.length > 0 && (
+            <div className="space-y-4">
+              <div className="flex flex-wrap gap-3">
+                {imageFiles.map((file, idx) => (
+                  <div key={idx} className="relative w-20 h-20 rounded-xl overflow-hidden border border-black/10 dark:border-white/10 group">
+                    <img src={URL.createObjectURL(file)} alt="upload" className="w-full h-full object-cover" />
+                    <button onClick={() => setImageFiles(prev => prev.filter((_, i) => i !== idx))} className="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center text-[10px] cursor-pointer shadow-md opacity-0 group-hover:opacity-100 transition-opacity">
+                      <X size={12} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              <button
+                onClick={handleGeneratePdfFromImages}
+                disabled={isGeneratingPdf}
+                className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md cursor-pointer disabled:opacity-50"
+              >
+                {isGeneratingPdf ? <RefreshCw size={16} className="animate-spin" /> : <Download size={16} />}
+                <span>{isGeneratingPdf ? 'Generating PDF...' : 'Download as PDF'}</span>
+              </button>
+            </div>
+          )}
         </div>
       )}
 

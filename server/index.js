@@ -14,10 +14,10 @@ app.use(express.json({ limit: '10mb' }));
 
 // Model Cascade Array for Zero-Downtime Gemini Web AI
 const GEMINI_MODELS = [
-  'gemini-2.5-flash',
-  'gemini-2.5-flash-lite',
-  'gemini-2.0-flash',
-  'gemini-1.5-flash',
+  'gemini-3.6-flash',
+  'gemini-3.7-flash',
+  'gemini-3.5-flash',
+  'gemini-3.8-flash',
 ];
 
 // LaTeX & Math Formula Sanitizer
@@ -54,120 +54,13 @@ function cleanMathFormulas(input) {
 }
 
 // In-Memory Data Store with Initial Mock Seed Data
-let mockTasks = [
-  {
-    id: 'task-1',
-    title: 'Complete Operating System Lab Assignment 3',
-    description: 'Implement Semaphore deadlock solution in C/C++',
-    category: 'assignment',
-    priority: 'high',
-    due_date: new Date(Date.now() + 86400000).toISOString().split('T')[0],
-    due_time: '23:59',
-    completed: false,
-    created_at: new Date().toISOString()
-  },
-  {
-    id: 'task-2',
-    title: 'Data Structures & Algorithms Midterm Exam',
-    description: 'Revise Graph Algorithms, Dijkstra, and Dynamic Programming',
-    category: 'exam',
-    priority: 'high',
-    due_date: new Date(Date.now() + 172800000).toISOString().split('T')[0],
-    due_time: '10:00',
-    completed: false,
-    created_at: new Date().toISOString()
-  },
-  {
-    id: 'task-3',
-    title: 'Database Systems Group Project Architecture',
-    description: 'Draft Supabase RLS schema and ER diagram',
-    category: 'project',
-    priority: 'medium',
-    due_date: new Date(Date.now() + 259200000).toISOString().split('T')[0],
-    due_time: '18:00',
-    completed: true,
-    created_at: new Date().toISOString()
-  }
-];
+let mockTasks = [];
 
-let mockCommunities = [
-  {
-    id: 'comm-1',
-    name: 'Computer Science 2026',
-    icon: '💻',
-    description: 'Official batch discussion and exam preparation hub',
-    category: 'Computer Science',
-    is_private: false,
-    created_by: 'admin',
-    channels: [
-      { id: 'chan-1', name: 'general', description: 'General batch talk & announcements' },
-      { id: 'chan-2', name: 'homework-help', description: 'Doubt solving & assignment assistance' },
-      { id: 'chan-3', name: 'exam-prep', description: 'Past papers, notes & cheat sheets' },
-      { id: 'chan-4', name: 'project-collab', description: 'Find teammates and discuss hackathons' }
-    ]
-  },
-  {
-    id: 'comm-2',
-    name: 'Physics & Applied Math Lab',
-    icon: '⚡',
-    description: 'Quantum physics, differential equations & calculus study group',
-    category: 'Mathematics & Physics',
-    is_private: false,
-    created_by: 'admin',
-    channels: [
-      { id: 'chan-5', name: 'quantum-physics', description: 'Schrodinger equations & wave functions' },
-      { id: 'chan-6', name: 'calculus-hub', description: 'Integration, series & vectors' }
-    ]
-  },
-  {
-    id: 'comm-3',
-    name: 'Web Dev & AI Innovators',
-    icon: '🚀',
-    description: 'Full-stack engineering, React, Node.js and Gemini AI agents',
-    category: 'Engineering',
-    is_private: true,
-    passcode: '1234',
-    created_by: 'admin',
-    channels: [
-      { id: 'chan-7', name: 'react-node', description: 'MERN stack tips and code reviews' },
-      { id: 'chan-8', name: 'ai-agents', description: 'Building with Gemini API & LLM workflows' }
-    ]
-  }
-];
+let mockCommunities = [];
 
-let mockMessages = [
-  {
-    id: 'msg-1',
-    channel_id: 'chan-1',
-    user: { full_name: 'Aryan Sharma', username: 'aryan_dev', college: 'Tech University', avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150' },
-    content: 'Hey everyone! Has anyone started working on the OS Semaphore lab assignment?',
-    created_at: new Date(Date.now() - 3600000).toISOString(),
-    reactions: [{ emoji: '👍', count: 4, users: ['user1', 'user2'] }]
-  },
-  {
-    id: 'msg-2',
-    channel_id: 'chan-1',
-    user: { full_name: 'Priya Patel', username: 'priya_p', college: 'Tech University', avatar_url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150' },
-    content: 'Yes! Check out page 42 of the textbook for the mutex code template.',
-    created_at: new Date(Date.now() - 1800000).toISOString(),
-    reactions: [{ emoji: '🔥', count: 6, users: ['user1'] }, { emoji: '💡', count: 3, users: ['user3'] }]
-  },
-  {
-    id: 'msg-3',
-    channel_id: 'chan-2',
-    user: { full_name: 'Rohan Verma', username: 'rohan_v', college: 'Tech University', avatar_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150' },
-    content: 'Can someone explain Dijkstra shortest path algorithm complexity with Fibonacci heaps?',
-    created_at: new Date(Date.now() - 900000).toISOString(),
-    reactions: [{ emoji: '🚀', count: 2, users: ['user2'] }]
-  }
-];
+let mockMessages = [];
 
-let mockSearchHistory = [
-  'Operating Systems Silberschatz 10th edition PDF',
-  'Data Structures Dijkstra algorithm python',
-  'Calculus 3 multivariable integration notes',
-  'React 18 hooks cheat sheet'
-];
+let mockSearchHistory = [];
 
 // --- API ENDPOINTS ---
 
@@ -598,7 +491,8 @@ app.post('/api/ai/quiz', async (req, res) => {
       if (response.ok) {
         const data = await response.json();
         const parts = data.candidates?.[0]?.content?.parts || [];
-        const rawJson = parts.map(p => p.text || '').join('');
+        let rawJson = parts.map(p => p.text || '').join('');
+        rawJson = rawJson.replace(/```json/gi, '').replace(/```/g, '').trim();
         const questions = JSON.parse(rawJson);
         return res.json({ topic, difficulty, questions });
       }
@@ -643,7 +537,7 @@ app.post('/api/ai/summarize', async (req, res) => {
         const data = await response.json();
         const parts = data.candidates?.[0]?.content?.parts || [];
         const result = parts.map(p => p.text || '').join('');
-        return res.json({ summary: cleanMathFormulas(result) });
+        return res.json({ summary: result });
       }
     } catch {
       continue;
@@ -767,7 +661,8 @@ app.post('/api/ai/presentation', async (req, res) => {
       if (response.ok) {
         const data = await response.json();
         const parts = data.candidates?.[0]?.content?.parts || [];
-        const rawJson = parts.map(p => p.text || '').join('');
+        let rawJson = parts.map(p => p.text || '').join('');
+        rawJson = rawJson.replace(/```json/gi, '').replace(/```/g, '').trim();
         const slides = JSON.parse(rawJson);
         return res.json({ topic, numSlides, style, slides });
       }
@@ -784,6 +679,41 @@ app.post('/api/ai/presentation', async (req, res) => {
     slides: generateFallbackSlides(),
     isFallback: true
   });
+});
+
+// AI Generic Chat Endpoint
+app.post('/api/ai/chat', async (req, res) => {
+  const { prompt } = req.body;
+  if (!prompt) return res.status(400).json({ error: 'Prompt is required' });
+
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    return res.json({ text: `Fallback AI response for flashcards. Please configure Gemini API Key.` });
+  }
+
+  for (const model of GEMINI_MODELS) {
+    try {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ role: 'user', parts: [{ text: prompt }] }],
+          generationConfig: { temperature: 0.7 }
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const parts = data.candidates?.[0]?.content?.parts || [];
+        const text = parts.map(p => p.text || '').join('');
+        return res.json({ text });
+      }
+    } catch {
+      continue;
+    }
+  }
+  res.status(500).json({ error: 'Chat failed' });
 });
 
 // Tasks Endpoints
