@@ -2,7 +2,7 @@ import React from 'react';
 import { useApp } from '../context/AppContext';
 import {
   Search, Clock, Sparkles, BookOpen,
-  Bell, Zap, LogOut, User
+  Bell, Zap, LogOut, User, HelpCircle
 } from 'lucide-react';
 
 export default function Navbar() {
@@ -86,8 +86,18 @@ export default function Navbar() {
           <span>{displayName.split(' ')[0]}</span>
         </button>
 
+        {/* Help & Support Button */}
+        <button
+          className="navbar-icon-btn"
+          onClick={() => window.dispatchEvent(new CustomEvent('open-support-modal'))}
+          title="Help & Support"
+          aria-label="Open Help and Support"
+        >
+          <HelpCircle size={17} />
+        </button>
+
         {/* Sign out */}
-        <button className="navbar-icon-btn" onClick={signOut} title="Sign out">
+        <button className="navbar-icon-btn" onClick={signOut} title="Sign out" aria-label="Sign out">
           <LogOut size={17} />
         </button>
       </div>

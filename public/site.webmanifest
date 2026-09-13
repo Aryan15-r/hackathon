@@ -1,0 +1,21 @@
+{
+  "name": "StudySpace — Student Productivity Workspace",
+  "short_name": "StudySpace",
+  "description": "All-in-one student workspace: AI tutor, task planner, study tools, document studio, scientific calculator, and peer channels.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FDF6EC",
+  "theme_color": "#1E3A5F",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

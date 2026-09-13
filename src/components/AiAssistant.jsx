@@ -39,8 +39,48 @@ function cleanMathFormulas(input) {
   return text;
 }
 
-// Formatted Markdown, Code Blocks & Math Equations Renderer
-function FormattedMessage({ content }) {
+function CodeBlockComponent({ language, code }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(code);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div className="my-3 rounded-xl overflow-hidden border border-[#1E3A5F]/20 bg-[#0D1117] shadow-xl font-mono text-xs">
+      <div className="bg-[#161B22] px-4 py-2.5 flex items-center justify-between border-b border-white/10 text-[11px] text-gray-300 font-semibold tracking-wide">
+        <div className="flex items-center gap-2">
+          <Code size={14} className="text-amber-400" />
+          <span className="uppercase text-amber-300 font-bold">{language || 'code'}</span>
+        </div>
+        <button
+          onClick={handleCopy}
+          className="hover:bg-white/10 px-2.5 py-1 rounded-md transition-all cursor-pointer flex items-center gap-1.5 text-[11px] text-white/80 hover:text-white"
+        >
+          {copied ? (
+            <>
+              <Check size={13} className="text-emerald-400" />
+              <span className="text-emerald-400 font-bold">Copied!</span>
+            </>
+          ) : (
+            <>
+              <Copy size={13} />
+              <span>Copy Code</span>
+            </>
+          )}
+        </button>
+      </div>
+      <pre className="p-4 overflow-x-auto text-emerald-300 leading-relaxed font-mono selection:bg-emerald-500/30">
+        <code>{code}</code>
+      </pre>
+    </div>
+  );
+}
+
+// Formatted Markdown, Code Blocks, Tables & Math Equations Renderer
+function FormattedMessage({ content, isUser = false }) {
   if (!content) return null;
 
   const codeBlockRegex = /```(\w*)\n([\s\S]*?)```/g;
@@ -68,75 +108,247 @@ function FormattedMessage({ content }) {
     <div className="formatted-msg-container space-y-3">
       {parts.map((part, pIdx) => {
         if (part.type === 'code') {
-          return (
-            <div key={pIdx} className="my-3 rounded-xl overflow-hidden border border-white/15 bg-[#0D1117] shadow-lg font-mono text-xs">
-              <div className="bg-[#161B22] px-4 py-2 flex items-center justify-between border-b border-white/10 text-[11px] text-gray-400 font-semibold uppercase tracking-wider">
-                <span>{part.language || 'Code Snippet'}</span>
-                <button
-                  onClick={() => navigator.clipboard.writeText(part.code)}
-                  className="hover:text-white transition-colors cursor-pointer flex items-center gap-1 text-[11px]"
-                >
-                  <Copy size={12} />
-                  <span>Copy Code</span>
-                </button>
+          return <CodeBlockComponent key={pIdx} language={part.language} code={part.code} />;
+        }
+
+        const lines = part.value.split('\n');
+        let tableRows = [];
+        let inTable = false;
+
+        const renderedBlocks = [];
+
+        lines.forEach((line, lIdx) => {
+          const trimmed = line.trim();
+
+          // Markdown Table parsing
+          if (trimmed.startsWith('|') && trimmed.endsWith('|')) {
+            inTable = true;
+            if (!trimmed.includes('---')) {
+              const cells = trimmed.split('|').slice(1, -1).map(c => c.trim());
+              tableRows.push(cells);
+            }
+            return;
+          } else if (inTable) {
+            inTable = false;
+            if (tableRows.length > 0) {
+              const headerRow = tableRows[0];
+              const bodyRows = tableRows.slice(1);
+              renderedBlocks.push(
+                <div key={`table-${lIdx}`} className="my-3 overflow-x-auto rounded-xl border border-[#1E3A5F]/15 bg-white shadow-sm">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr className="bg-[#1E3A5F] text-white font-bold font-['Outfit']">
+                        {headerRow.map((cell, cIdx) => (
+                          <th key={cIdx} className="p-3 border-b border-white/10">{parseInlineFormatting(cell, isUser)}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {bodyRows.map((r, rIdx) => (
+                        <tr key={rIdx} className={rIdx % 2 === 0 ? 'bg-white' : 'bg-[#FDF6EC]/40'}>
+                          {r.map((cell, cIdx) => (
+                            <th key={cIdx} className="p-3 border-t border-[#1E3A5F]/10 font-normal text-[#1A1A2E]">{parseInlineFormatting(cell, isUser)}</th>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              );
+              tableRows = [];
+            }
+          }
+
+          if (!trimmed) {
+            renderedBlocks.push(<div key={lIdx} className="h-1.5" />);
+            return;
+          }
+
+          // Block Math Equation ($$ ... $$)
+          if (trimmed.startsWith('$$') && trimmed.endsWith('$$')) {
+            const mathExp = cleanMathLatex(trimmed.slice(2, -2).trim());
+            renderedBlocks.push(
+              <div key={lIdx} className="my-3 p-3.5 rounded-2xl bg-[#1E3A5F]/5 border border-[#1E3A5F]/15 text-center font-mono text-xs font-bold text-[#1E3A5F] shadow-inner">
+                {mathExp}
               </div>
-              <pre className="p-4 overflow-x-auto text-emerald-300 leading-relaxed font-mono selection:bg-emerald-500/30">
-                <code>{part.code}</code>
-              </pre>
+            );
+            return;
+          }
+
+          // Headings
+          if (trimmed.startsWith('### ')) {
+            renderedBlocks.push(
+              <h3 key={lIdx} className={`text-sm font-bold font-['Outfit'] mt-3 mb-1 ${isUser ? 'text-white' : 'text-[#1E3A5F]'}`}>
+                {trimmed.replace('### ', '')}
+              </h3>
+            );
+            return;
+          }
+          if (trimmed.startsWith('## ')) {
+            renderedBlocks.push(
+              <h2 key={lIdx} className={`text-base font-bold font-['Outfit'] mt-4 mb-1 ${isUser ? 'text-white' : 'text-[#1E3A5F]'}`}>
+                {trimmed.replace('## ', '')}
+              </h2>
+            );
+            return;
+          }
+          if (trimmed.startsWith('# ')) {
+            renderedBlocks.push(
+              <h1 key={lIdx} className={`text-lg font-extrabold font-['Outfit'] mt-4 mb-2 ${isUser ? 'text-white' : 'text-[#1E3A5F]'}`}>
+                {trimmed.replace('# ', '')}
+              </h1>
+            );
+            return;
+          }
+
+          // Blockquote
+          if (trimmed.startsWith('> ')) {
+            renderedBlocks.push(
+              <blockquote key={lIdx} className={`pl-3.5 py-1 my-2 border-l-3 ${isUser ? 'border-amber-300 text-white/90' : 'border-amber-500 text-[#1A1A2E]/80'} italic text-xs`}>
+                {parseInlineFormatting(trimmed.replace('> ', ''), isUser)}
+              </blockquote>
+            );
+            return;
+          }
+
+          // Bullet List
+          if (trimmed.startsWith('- ') || trimmed.startsWith('• ') || trimmed.startsWith('* ')) {
+            const bulletText = trimmed.replace(/^[-•*]\s*/, '');
+            renderedBlocks.push(
+              <div key={lIdx} className="flex items-start gap-2 text-xs sm:text-sm pl-2 my-0.5">
+                <span className={`font-bold ${isUser ? 'text-amber-300' : 'text-amber-600'}`}>•</span>
+                <span>{parseInlineFormatting(bulletText, isUser)}</span>
+              </div>
+            );
+            return;
+          }
+
+          // Numbered List
+          if (/^\d+\.\s/.test(trimmed)) {
+            const numStr = trimmed.match(/^\d+\./)?.[0] || '1.';
+            const itemText = trimmed.replace(/^\d+\.\s*/, '');
+            renderedBlocks.push(
+              <div key={lIdx} className="flex items-start gap-2 text-xs sm:text-sm pl-2 my-0.5">
+                <span className={`font-bold ${isUser ? 'text-amber-300' : 'text-[#1E3A5F]'}`}>{numStr}</span>
+                <span>{parseInlineFormatting(itemText, isUser)}</span>
+              </div>
+            );
+            return;
+          }
+
+          // Standard Paragraph
+          renderedBlocks.push(
+            <p key={lIdx} className={`text-xs sm:text-sm leading-relaxed ${isUser ? 'text-white' : 'text-[#1A1A2E]'}`}>
+              {parseInlineFormatting(line, isUser)}
+            </p>
+          );
+        });
+
+        // Flush remaining table if at end
+        if (tableRows.length > 0) {
+          const headerRow = tableRows[0];
+          const bodyRows = tableRows.slice(1);
+          renderedBlocks.push(
+            <div key="table-end" className="my-3 overflow-x-auto rounded-xl border border-[#1E3A5F]/15 bg-white shadow-sm">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="bg-[#1E3A5F] text-white font-bold font-['Outfit']">
+                    {headerRow.map((cell, cIdx) => (
+                      <th key={cIdx} className="p-3 border-b border-white/10">{parseInlineFormatting(cell, isUser)}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {bodyRows.map((r, rIdx) => (
+                    <tr key={rIdx} className={rIdx % 2 === 0 ? 'bg-white' : 'bg-[#FDF6EC]/40'}>
+                      {r.map((cell, cIdx) => (
+                        <th key={cIdx} className="p-3 border-t border-[#1E3A5F]/10 font-normal text-[#1A1A2E]">{parseInlineFormatting(cell, isUser)}</th>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           );
         }
 
-        const lines = part.value.split('\n');
-        return (
-          <div key={pIdx} className="space-y-1.5 leading-relaxed">
-            {lines.map((line, lIdx) => {
-              const trimmed = line.trim();
-              if (!trimmed) return <div key={lIdx} className="h-2" />;
-
-              if (trimmed.startsWith('### ')) {
-                return <h3 key={lIdx} className="text-base font-bold text-amber-300 mt-3 mb-1">{trimmed.replace('### ', '')}</h3>;
-              }
-              if (trimmed.startsWith('## ')) {
-                return <h2 key={lIdx} className="text-lg font-bold text-indigo-300 mt-4 mb-1">{trimmed.replace('## ', '')}</h2>;
-              }
-              if (trimmed.startsWith('# ')) {
-                return <h1 key={lIdx} className="text-xl font-extrabold text-white mt-4 mb-2">{trimmed.replace('# ', '')}</h1>;
-              }
-
-              if (trimmed.startsWith('- ') || trimmed.startsWith('• ')) {
-                const bulletText = trimmed.replace(/^[-•]\s*/, '');
-                return (
-                  <div key={lIdx} className="flex items-start gap-2 text-xs sm:text-sm pl-2">
-                    <span className="text-amber-400 font-bold">•</span>
-                    <span>{parseInlineFormatting(bulletText)}</span>
-                  </div>
-                );
-              }
-
-              return <p key={lIdx} className="text-xs sm:text-sm text-gray-200">{parseInlineFormatting(line)}</p>;
-            })}
-          </div>
-        );
+        return <div key={pIdx} className="space-y-1">{renderedBlocks}</div>;
       })}
     </div>
   );
 }
 
-function parseInlineFormatting(str) {
+function cleanMathLatex(text) {
+  if (!text) return '';
+  return text
+    .replace(/\\rightarrow|\\to/g, '→')
+    .replace(/\\leftarrow/g, '←')
+    .replace(/\\Rightarrow|\\implies/g, '⇒')
+    .replace(/\\Leftarrow/g, '⇐')
+    .replace(/\\leftrightarrow/g, '↔')
+    .replace(/\\Leftrightarrow|\\iff/g, '⇔')
+    .replace(/\\qquad/g, '    ')
+    .replace(/\\quad/g, '  ')
+    .replace(/\\emptyset|\\empty/g, '∅')
+    .replace(/\\approx/g, '≈')
+    .replace(/\\neq|\\ne/g, '≠')
+    .replace(/\\leq|\\le/g, '≤')
+    .replace(/\\geq|\\ge/g, '≥')
+    .replace(/\\times/g, '×')
+    .replace(/\\div/g, '÷')
+    .replace(/\\cdot/g, '·')
+    .replace(/\\pm/g, '±')
+    .replace(/\\in/g, '∈')
+    .replace(/\\notin/g, '∉')
+    .replace(/\\subset/g, '⊂')
+    .replace(/\\subseteq/g, '⊆')
+    .replace(/\\infty/g, '∞')
+    .replace(/\\alpha/g, 'α')
+    .replace(/\\beta/g, 'β')
+    .replace(/\\gamma/g, 'γ')
+    .replace(/\\delta/g, 'δ')
+    .replace(/\\theta/g, 'θ')
+    .replace(/\\pi/g, 'π')
+    .replace(/\\sigma/g, 'σ')
+    .replace(/\\omega/g, 'ω')
+    .replace(/\\Delta/g, 'Δ')
+    .replace(/\\Sigma/g, 'Σ')
+    .replace(/\\Omega/g, 'Ω')
+    .replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, '($1 / $2)')
+    .replace(/\\sqrt\{([^}]+)\}/g, '√($1)')
+    .replace(/\\text\{([^}]+)\}/g, '$1')
+    .replace(/\\mathbf\{([^}]+)\}/g, '$1')
+    .replace(/\\mathbb\{([^}]+)\}/g, '$1');
+}
+
+function parseInlineFormatting(str, isUser = false) {
   if (!str) return '';
   const parts = str.split(/(\*\*.*?\*\*|`.*?`|\$.*?\$)/g);
   return parts.map((chunk, i) => {
     if (chunk.startsWith('**') && chunk.endsWith('**')) {
-      return <strong key={i} className="text-white font-semibold">{chunk.slice(2, -2)}</strong>;
+      return (
+        <strong key={i} className={`font-bold ${isUser ? 'text-white' : 'text-[#1E3A5F]'}`}>
+          {cleanMathLatex(chunk.slice(2, -2))}
+        </strong>
+      );
     }
     if (chunk.startsWith('`') && chunk.endsWith('`')) {
-      return <code key={i} className="bg-white/10 px-1.5 py-0.5 rounded text-[11px] font-mono text-emerald-300 border border-white/10">{chunk.slice(1, -1)}</code>;
+      return (
+        <code key={i} className={`px-1.5 py-0.5 rounded text-[11px] font-mono border ${
+          isUser ? 'bg-white/15 text-amber-200 border-white/20' : 'bg-[#1E3A5F]/10 text-[#1E3A5F] border-[#1E3A5F]/20 font-semibold'
+        }`}>
+          {chunk.slice(1, -1)}
+        </code>
+      );
     }
     if (chunk.startsWith('$') && chunk.endsWith('$') && chunk.length > 2) {
-      return <span key={i} className="inline-block bg-indigo-950/60 text-amber-300 font-mono px-2 py-0.5 rounded border border-indigo-500/30 text-xs shadow-sm">{chunk.slice(1, -1)}</span>;
+      return (
+        <span key={i} className="inline-block bg-[#1E3A5F] text-amber-300 font-mono px-2 py-0.5 rounded text-xs shadow-sm font-bold">
+          {cleanMathLatex(chunk.slice(1, -1))}
+        </span>
+      );
     }
-    return chunk;
+    return <span key={i} className={isUser ? 'text-white' : 'text-[#1A1A2E]'}>{cleanMathLatex(chunk)}</span>;
   });
 }
 
@@ -289,7 +501,7 @@ export default function AiAssistant() {
             </div>
 
             <div className="msg-content">
-              <FormattedMessage content={msg.text} />
+              <FormattedMessage content={msg.text} isUser={msg.role === 'user'} />
             </div>
           </div>
         ))}
@@ -430,14 +642,18 @@ export default function AiAssistant() {
 
         .chat-message.user {
           align-self: flex-end;
-          background: rgba(99, 102, 241, 0.18);
-          border: 1px solid rgba(99, 102, 241, 0.3);
+          background: #1E3A5F;
+          border: 1px solid #152b46;
+          color: #FFFFFF;
+          box-shadow: 0 4px 14px rgba(30, 58, 95, 0.15);
         }
 
         .chat-message.model {
           align-self: flex-start;
-          background: rgba(255, 255, 255, 0.04);
-          border: 1px solid var(--card-border);
+          background: #FFFFFF;
+          border: 1.5px solid rgba(30, 58, 95, 0.15);
+          box-shadow: 0 4px 20px rgba(30, 58, 95, 0.06);
+          color: #1A1A2E;
         }
 
         .msg-header {
@@ -448,15 +664,15 @@ export default function AiAssistant() {
 
         .author-name {
           font-size: 0.8rem;
-          font-weight: 700;
+          font-weight: 800;
           display: flex;
           align-items: center;
           gap: 0.35rem;
         }
 
-        .author-name.user { color: #a5b4fc; }
-        .author-name.model { color: var(--accent-cyan); }
-        .author-name.model small { font-weight: 400; color: var(--text-muted); }
+        .author-name.user { color: #FCD34D; }
+        .author-name.model { color: #1E3A5F; }
+        .author-name.model small { font-weight: 500; color: #6B7280; }
 
         .fallback-badge {
           font-size: 0.65rem;

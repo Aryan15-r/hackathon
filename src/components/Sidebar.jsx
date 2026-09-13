@@ -74,7 +74,7 @@ export default function Sidebar() {
         </button>
       </nav>
 
-      {/* Profile Footer */}
+      {/* Profile Footer & Links */}
       <div className="sidebar-profile">
         <div className="sidebar-profile-card" onClick={() => setIsProfileModalOpen(true)}>
           {avatarUrl ? (
@@ -86,6 +86,29 @@ export default function Sidebar() {
             <div className="sidebar-user-name">{displayName}</div>
             <div className="sidebar-user-email">{email}</div>
           </div>
+        </div>
+
+        <div className="sidebar-footer-links flex items-center justify-between text-[11px] text-white/50 pt-2 px-1 border-t border-white/10 mt-2">
+          <button
+            onClick={() => window.dispatchEvent(new CustomEvent('open-privacy-modal'))}
+            className="hover:text-white transition-colors cursor-pointer"
+          >
+            Privacy
+          </button>
+          <span>•</span>
+          <button
+            onClick={() => window.dispatchEvent(new CustomEvent('open-terms-modal'))}
+            className="hover:text-white transition-colors cursor-pointer"
+          >
+            Terms
+          </button>
+          <span>•</span>
+          <button
+            onClick={() => window.dispatchEvent(new CustomEvent('open-support-modal'))}
+            className="hover:text-white transition-colors cursor-pointer"
+          >
+            Support
+          </button>
         </div>
       </div>
 

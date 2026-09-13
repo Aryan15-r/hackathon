@@ -1,29 +1,33 @@
 import { useState } from "react";
 import { FlutedGlass } from "@paper-design/shaders-react";
-import { Eye, EyeOff, Loader2, AlertCircle } from "lucide-react";
+import { Eye, EyeOff, Loader2, AlertCircle, Sparkles } from "lucide-react";
 import { motion } from "motion/react";
 import { supabase } from "../../lib/supabase";
+import { useApp } from "../../context/AppContext";
 
 const termsText = (
   <>
     By creating an account, you agree to our{" "}
-    <a
-      href="#"
-      className="font-medium text-black/55 underline underline-offset-2 "
+    <button
+      type="button"
+      onClick={() => window.dispatchEvent(new CustomEvent('open-terms-modal'))}
+      className="font-medium text-black/70 underline underline-offset-2 hover:text-black cursor-pointer"
     >
       Terms of Service
-    </a>{" "}
+    </button>{" "}
     and{" "}
-    <a
-      href="#"
-      className="font-medium text-black/55 underline underline-offset-2 "
+    <button
+      type="button"
+      onClick={() => window.dispatchEvent(new CustomEvent('open-privacy-modal'))}
+      className="font-medium text-black/70 underline underline-offset-2 hover:text-black cursor-pointer"
     >
       Privacy Policy
-    </a>
+    </button>
   </>
 );
 
 export default function AuthSectionThree() {
+  const { loginAsDemo } = useApp();
   const [view, setView] = useState("signup"); // 'signup', 'signin', 'forgot-password', 'otp'
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -171,14 +175,13 @@ export default function AuthSectionThree() {
                       {view === "signup" ? "Sign up" : "Sign in"} with Google
                     </span>
                   </button>
-                  {/* Apple disabled / visual only as requested to match UI */}
                   <button
                     type="button"
-                    disabled
-                    className="flex h-11 w-full min-w-0 items-center justify-center gap-2 rounded-lg border border-black/15 bg-white px-4 text-sm font-medium text-black transition-colors opacity-50 cursor-not-allowed"
+                    onClick={loginAsDemo}
+                    className="flex h-11 w-full min-w-0 items-center justify-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 text-sm font-semibold text-[#1E3A5F] transition-colors hover:bg-amber-500/20 cursor-pointer shadow-sm"
                   >
-                    <AppleIcon />
-                    <span className="whitespace-nowrap">Sign in with Apple</span>
+                    <Sparkles size={16} className="text-amber-600" />
+                    <span className="whitespace-nowrap">Demo Student Access</span>
                   </button>
                 </div>
 

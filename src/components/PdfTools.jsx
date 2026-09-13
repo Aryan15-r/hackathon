@@ -640,7 +640,7 @@ export default function PdfTools() {
           <div className="flex flex-wrap items-center gap-2 border-b border-black/10 dark:border-white/10 pb-4">
             <button
               onClick={() => setActiveConverterSubTab('img2pdf')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${activeConverterSubTab === 'img2pdf' ? 'bg-[#1E3A5F] text-white shadow-md' : 'bg-black/5 dark:bg-white/5 text-gray-400 hover:text-white'}`}
+              className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${activeConverterSubTab === 'img2pdf' ? 'bg-[#1E3A5F] text-white shadow-md' : 'bg-black/5 dark:bg-white/10 text-slate-700 dark:text-gray-200 hover:bg-black/10'}`}
             >
               <FileImage size={15} />
               <span>Image to PDF</span>
@@ -648,7 +648,7 @@ export default function PdfTools() {
 
             <button
               onClick={() => setActiveConverterSubTab('txt2pdf')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${activeConverterSubTab === 'txt2pdf' ? 'bg-[#1E3A5F] text-white shadow-md' : 'bg-black/5 dark:bg-white/5 text-gray-400 hover:text-white'}`}
+              className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${activeConverterSubTab === 'txt2pdf' ? 'bg-[#1E3A5F] text-white shadow-md' : 'bg-black/5 dark:bg-white/10 text-slate-700 dark:text-gray-200 hover:bg-black/10'}`}
             >
               <FileText size={15} />
               <span>Text to PDF</span>
@@ -656,7 +656,7 @@ export default function PdfTools() {
 
             <button
               onClick={() => setActiveConverterSubTab('textExport')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${activeConverterSubTab === 'textExport' ? 'bg-[#1E3A5F] text-white shadow-md' : 'bg-black/5 dark:bg-white/5 text-gray-400 hover:text-white'}`}
+              className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${activeConverterSubTab === 'textExport' ? 'bg-[#1E3A5F] text-white shadow-md' : 'bg-black/5 dark:bg-white/10 text-slate-700 dark:text-gray-200 hover:bg-black/10'}`}
             >
               <Download size={15} />
               <span>TXT / JSON Exporter</span>

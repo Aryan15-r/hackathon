@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Search, BookOpen, Download, Star, ExternalLink, History, Tag, Sparkles } from 'lucide-react';
+import { SkeletonCard } from './ui/Skeleton';
 
 export default function AcademicSearch() {
   const [query, setQuery] = useState('');
@@ -85,7 +86,9 @@ export default function AcademicSearch() {
           </h3>
 
           <div className="results-list">
-            {filteredResults.length === 0 ? (
+            {loading ? (
+              <SkeletonCard count={3} />
+            ) : filteredResults.length === 0 ? (
               <div className="empty-results glass-card">
                 <BookOpen size={40} className="empty-icon" />
                 <p>No resources found for "{query}". Try searching "Operating Systems" or "Calculus".</p>

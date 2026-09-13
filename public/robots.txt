@@ -1,0 +1,10 @@
+# User-agent configuration for StudySpace
+User-agent: *
+Allow: /
+
+# Disallow internal API and dynamic auth paths
+Disallow: /api/
+Disallow: /auth/
+
+# Sitemap location
+Sitemap: https://studyspace.app/sitemap.xml

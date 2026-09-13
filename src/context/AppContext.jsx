@@ -67,6 +67,28 @@ export function AppProvider({ children }) {
     return () => subscription.unsubscribe();
   }, []);
 
+  const loginAsDemo = useCallback(() => {
+    const demoSession = {
+      access_token: 'demo_token_123',
+      user: {
+        id: 'demo-student-id',
+        email: 'alex.morgan@university.edu',
+        user_metadata: { full_name: 'Alex Morgan' }
+      }
+    };
+    setUserProfile({
+      id: 'demo-student-id',
+      full_name: 'Alex Morgan',
+      college: 'MIT / CS Dept',
+      major: 'Computer Science',
+      grad_year: '2026',
+      avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&h=150&fit=crop&q=80'
+    });
+    setSession(demoSession);
+    setIsOnboardingRequired(false);
+    setAuthLoading(false);
+  }, []);
+
   // ─────────────────────────────────────────────────────────────────────
   // Load data when session is established
   // ─────────────────────────────────────────────────────────────────────
@@ -569,6 +591,7 @@ export function AppProvider({ children }) {
       session,
       authLoading,
       signOut,
+      loginAsDemo,
       isOnboardingRequired,
       setIsOnboardingRequired,
       completeRegistration,
