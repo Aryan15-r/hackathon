@@ -32,7 +32,7 @@ function generateAcademicResponse(prompt) {
   if (p.includes('calculus') || p.includes('integral') || p.includes('derivative') || p.includes('math')) {
     return `### 📐 Calculus Derivation & Formula Guide\n\nFor continuous functions $f(x)$, the fundamental theorem connects derivatives and definite integrals:\n\n#### Fundamental Theorem:\n$$ \\int_{a}^{b} f(x) \\, dx = F(b) - F(a) $$\nwhere $F'(x) = f(x)$.\n\n#### Key Derivative Rules:\n1. **Power Rule**: $\\frac{d}{dx}[x^n] = n \\cdot x^{n-1}$\n2. **Product Rule**: $\\frac{d}{dx}[u \\cdot v] = u'v + uv'$`;
   }
-  return `### 📚 StudySpace AI Academic Explanation\n\nHere is a structured explanation for **"${prompt}"**:\n\n#### Overview & Core Concepts\n1. **Primary Principle**: Focuses on core analytical breakdown and high-yield concepts.\n2. **Academic Context**: Applies standard university curriculum benchmarks.\n\n#### Key Formulas & Principles\n$$ E = mc^2 \\quad \\text{and} \\quad a^2 + b^2 = c^2 $$\n\n#### Study Action Steps\n- Review past lecture slides and practice problems.\n- Test your knowledge with the StudySpace Quiz Generator.\n- Discuss in the Community Channels with fellow peers.`;
+  return `### ⚠️ Live AI Service Temporarily Unavailable\n\nWe could not connect to a live AI model for **"${prompt}"**, and no matching curated offline template exists for this specific subject.\n\n#### Available Offline Topics:\n- **Physics & Newton's Laws** (e.g. *"Explain Newton's second law"*)\n- **Coding & Algorithms** (e.g. *"Python sorting algorithm"*)\n- **Math & Calculus** (e.g. *"Fundamental theorem of calculus"*)\n\n*Please ensure a valid GEMINI_API_KEY is configured in your environment to query any topic live.*`;
 }
 
 // LaTeX & Math Formula Sanitizer
@@ -245,7 +245,15 @@ app.post('/api/ai/summarize', async (req, res) => {
     return res.json({ summary: cleanMathFormulas(summary) });
   } catch (e) {
     console.error('Summarize Fallback triggered:', e.message);
-    const fallbackSummary = `### 📝 Study Notes Summary: ${filename || 'Document'}\n\n#### Key Takeaways:\n- **Core Theme**: High-yield study concepts extracted from ${text.length} characters of notes.\n- **Key Formula / Axiom**: $E = m \\cdot c^2$ and optimal $O(n \\log n)$ time bounds.\n- **Action Item**: Review highlighted terms and practice quiz questions before upcoming examinations.`;
+    const keyLines = text.split('\n')
+      .map(l => l.trim())
+      .filter(l => l.length > 15 && !l.startsWith('#'))
+      .slice(0, 4);
+    const extractedPoints = keyLines.length > 0
+      ? keyLines.map(l => `- ${l}`).join('\n')
+      : `- ${text.substring(0, 200).trim()}...`;
+
+    const fallbackSummary = `### 📝 Study Notes Summary: ${filename || 'Document'}\n\n#### Key Extracted Concepts:\n${extractedPoints}\n\n#### Action Items:\n- Review the extracted key points above.\n- Test your knowledge with practice questions on StudySpace.`;
     return res.json({ summary: fallbackSummary, isFallback: true });
   }
 });
