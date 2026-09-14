@@ -399,6 +399,7 @@ export default function AiAssistant() {
     if (!customPrompt) setInputPrompt('');
     setLoading(true);
 
+    // 1. Try Backend / Vercel Serverless Endpoint (/api/ai/chat)
     try {
       const response = await fetch('/api/ai/chat', {
         method: 'POST',
@@ -415,21 +416,50 @@ export default function AiAssistant() {
         if (data.text) {
           setAiHistory(prev => [...prev, { role: 'model', text: data.text, modelUsed: data.modelUsed || 'StudySpace AI', isFallback: Boolean(data.isFallback) }]);
           if (data.modelUsed) setAiModelUsed(data.modelUsed);
+          setLoading(false);
           return;
         }
       }
-
-      // If HTTP 405 or backend error, use client academic generator
-      const fallbackText = generateClientAcademicFallback(textToSend);
-      setAiHistory(prev => [...prev, { role: 'model', text: fallbackText, modelUsed: 'StudySpace AI (Offline Engine)', isFallback: true }]);
-      setAiModelUsed('StudySpace AI (Offline Engine)');
-    } catch (err) {
-      const fallbackText = generateClientAcademicFallback(textToSend);
-      setAiHistory(prev => [...prev, { role: 'model', text: fallbackText, modelUsed: 'StudySpace AI (Offline Engine)', isFallback: true }]);
-      setAiModelUsed('StudySpace AI (Offline Engine)');
-    } finally {
-      setLoading(false);
+    } catch (e) {
+      console.warn('Backend /api/ai/chat endpoint unavailable, trying direct client Gemini API call...');
     }
+
+    // 2. Direct Browser-side Gemini API Call (VITE_GEMINI_API_KEY)
+    const clientKey = import.meta.env?.VITE_GEMINI_API_KEY;
+    if (clientKey && clientKey.length > 10) {
+      const models = ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-1.5-flash', 'gemini-flash-latest'];
+      for (const m of models) {
+        try {
+          const url = `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${clientKey}`;
+          const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ role: 'user', parts: [{ text: textToSend }] }]
+            })
+          });
+
+          if (res.ok) {
+            const data = await res.json();
+            const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (text) {
+              setAiHistory(prev => [...prev, { role: 'model', text: text.trim(), modelUsed: `gemini (${m})`, isFallback: false }]);
+              setAiModelUsed(`gemini (${m})`);
+              setLoading(false);
+              return;
+            }
+          }
+        } catch (e) {
+          console.error(`Direct client call failed for model ${m}:`, e.message);
+        }
+      }
+    }
+
+    // 3. Transparent Offline Fallback Engine
+    const fallbackText = generateClientAcademicFallback(textToSend);
+    setAiHistory(prev => [...prev, { role: 'model', text: fallbackText, modelUsed: 'StudySpace AI (Offline Engine)', isFallback: true }]);
+    setAiModelUsed('StudySpace AI (Offline Engine)');
+    setLoading(false);
   };
 
   const handleCopy = (text, index) => {
